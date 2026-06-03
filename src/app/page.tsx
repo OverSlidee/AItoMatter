@@ -211,10 +211,10 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row h-screen max-h-screen text-slate-100 overflow-hidden font-sans">
+    <div className="flex-1 flex flex-col md:flex-row min-h-screen text-slate-100 font-sans">
       
       {/* Sidebar: Lists past generations */}
-      <aside className="w-full md:w-80 glass-panel border-r border-slate-800 flex flex-col h-[35vh] md:h-full shrink-0">
+      <aside className="w-full md:w-80 glass-panel border-r border-slate-800 flex flex-col shrink-0 md:sticky md:top-0 md:h-screen">
         {/* Header */}
         <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -287,7 +287,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Panel */}
-      <main className="flex-1 flex flex-col h-[65vh] md:h-full overflow-y-auto bg-slate-950/20">
+      <main className="flex-1 flex flex-col bg-slate-950/20 min-h-screen">
         
         {/* Form to submit new compilation */}
         {isCreating ? (

@@ -79,13 +79,15 @@ async function processJob(job: Job) {
 
     // Resolve C# Compiler paths
     const output3mfPath = path.join(jobDir, "output.3mf");
+    const isWindows = process.platform === "win32";
+    const binaryName = isWindows ? "cem.exe" : "cem";
     const cemExe = path.resolve(
       process.cwd(),
       "cem",
       "bin",
       "Debug",
       "net9.0",
-      "cem.exe"
+      binaryName
     );
 
     if (!fs.existsSync(cemExe)) {

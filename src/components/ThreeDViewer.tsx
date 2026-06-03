@@ -301,37 +301,62 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
         keyGeo.translate(0, shaft / 4 + keyD / 2, 0);
         keyGeo.rotateX(Math.PI / 2);
         sceneObjects.push(addGeometry(keyGeo, boreMaterial, true));
+      } else {
+        // Default / Custom components: Render a composite body (mounting base + cylindrical boss)
+        const width = Number(dimensions.width) || Number(dimensions.bracketWidth) || 40;
+        const height = Number(dimensions.height) || Number(dimensions.bracketThickness) || 12;
+        const depth = Number(dimensions.depth) || Number(dimensions.bracketLength) || 60;
+        const hole = Number(dimensions.holeDiameter) || Number(dimensions.shaftDiameter) || 8;
+
+        // Base box block
+        const baseGeo = new THREE.BoxGeometry(width, height, depth, 6, 2, 8);
+        baseGeo.translate(0, height / 2, 0);
+        sceneObjects.push(addGeometry(baseGeo, metalMaterial));
+
+        // Raised cylindrical boss in center
+        const bossR = Math.min(width, depth) / 3;
+        const bossH = height;
+        const bossGeo = new THREE.CylinderGeometry(bossR, bossR, bossH, 32, 2);
+        const bossMesh = addGeometry(bossGeo, highlightMaterial);
+        bossMesh.solidMesh.position.set(0, height + bossH / 2, 0);
+        bossMesh.wireMesh.position.set(0, height + bossH / 2, 0);
+        sceneObjects.push(bossMesh);
+
+        // Bored hole through both
+        const holeDepth = height + bossH + 0.4;
+        const holeGeo = new THREE.CylinderGeometry(hole / 2, hole / 2, holeDepth, 16, 2);
+        const holeMesh = addGeometry(holeGeo, boreMaterial, true);
+        holeMesh.solidMesh.position.set(0, (height + bossH) / 2, 0);
+        holeMesh.wireMesh.position.set(0, (height + bossH) / 2, 0);
+        sceneObjects.push(holeMesh);
       }
       centerAndFocusMesh();
     };
 
+    const loader = new ThreeMFLoader();
     if (outputFilePath) {
-      const loader = new ThreeMFLoader();
+      console.log("[ThreeDViewer] Loading 3MF model from:", outputFilePath);
       loader.load(
         outputFilePath,
-        (group) => {
-          group.traverse((child) => {
+        (object) => {
+          console.log("[ThreeDViewer] 3MF Model loaded successfully");
+          object.traverse((child) => {
             if (child instanceof THREE.Mesh) {
-              child.geometry.computeVertexNormals();
               child.material = metalMaterial;
-
-              // Add wireframe copy for mesh grid mode
+              child.castShadow = true;
+              child.receiveShadow = true;
+              
               const wireMesh = new THREE.Mesh(child.geometry, wireMaterial);
+              meshGroup.add(child);
               meshGroup.add(wireMesh);
-
-              sceneObjects.push({
-                solidMesh: child,
-                wireMesh: wireMesh,
-                isInner: false
-              });
+              sceneObjects.push({ solidMesh: child, wireMesh, isInner: false });
             }
           });
-          meshGroup.add(group);
           centerAndFocusMesh();
         },
         undefined,
-        (err) => {
-          console.error("ThreeMFLoader failed to load 3MF mesh, falling back to approximation:", err);
+        (error) => {
+          console.error("[ThreeDViewer] Error loading 3MF model, rendering fallback:", error);
           renderFallbackGeometry();
         }
       );
