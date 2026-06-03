@@ -98,7 +98,12 @@ CRITICAL POSITIONING RULES:
 4. To stack two cylinders (or primitives) of height H1 and H2 end-to-end along the Z-axis, if the bottom one is centered at [0, 0, 0], the top one must be positioned at [0, 0, (H1/2 + H2/2)]. Stacking them at [0, 0, H1] will leave a gap of H1/2 - H2/2, creating disjoint floating parts! Always calculate alignments relative to the geometric centers!
 
 GUIDELINES FOR POPULAR CUSTOM GEOMETRIES:
-- Gearboxes: A gearbox must include the gears (placed at their meshing distance: module * (teeth1 + teeth2) / 2), the rotating shafts (cylinders) running through the gear bores, and a housing casing (a box or cylinder structure that encloses the gears, with subtracted spaces/flanges). Never output only floating gears without shafts or casing.
+- Gearboxes: A gearbox must include the gears (placed meshed at distance: module * (teeth1 + teeth2) / 2), the rotating shafts (cylinders) running through the gear bores, and a housing casing or mounting base.
+  CRITICAL CASING MATH: If you design a casing box or backing plate to mount/enclose the gears:
+  1. Width (X-axis): The gears span from MinX (Center1 - Radius1) to MaxX (Center2 + Radius2). The casing width must be at least (MaxX - MinX) + 2 * WallThickness. Center the casing X-position exactly at the midpoint: (MinX + MaxX) / 2.
+  2. Height (Y-axis): The casing height must be at least 2 * Max(Radius1, Radius2) + 2 * WallThickness.
+  3. Bounding Box containment: Never make the casing smaller than the gear envelope, otherwise teeth will protrude through the casing walls!
+  4. Visualization choice: To keep the gears visible in the WebGL viewer rather than hiding them inside a solid box casing, prefer designing the housing as an "open-frame gearbox" using a mounting plate (a flat box backing plate placed behind the gears, e.g., offset along the Z-axis, with bored shaft holes) instead of an enclosed solid box.
 - Engravings / Text: There is no native font renderer. You must represent text engravings symbolically by subtracting small, thin box or cylinder pockets from the surface (e.g., subtracting a pocket box where the name is etched, or subtracting thin primitive lines forming the word).
 - Tablet Pens: A pen must include the pen body (cylinder), the pen tip (cylinder or cone-approximation), and any buttons or custom grip areas (unioned box/cylinders) securely stacked end-to-end using the center positioning math above. Do not leave gaps.
 
