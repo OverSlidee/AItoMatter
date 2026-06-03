@@ -342,16 +342,17 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
           console.log("[ThreeDViewer] 3MF Model loaded successfully");
           object.traverse((child) => {
             if (child instanceof THREE.Mesh) {
+              child.geometry.computeVertexNormals();
               child.material = metalMaterial;
               child.castShadow = true;
               child.receiveShadow = true;
               
               const wireMesh = new THREE.Mesh(child.geometry, wireMaterial);
-              meshGroup.add(child);
               meshGroup.add(wireMesh);
               sceneObjects.push({ solidMesh: child, wireMesh, isInner: false });
             }
           });
+          meshGroup.add(object);
           centerAndFocusMesh();
         },
         undefined,
