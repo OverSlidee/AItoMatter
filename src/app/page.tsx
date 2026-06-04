@@ -86,47 +86,75 @@ export default function Dashboard() {
     );
   };
 
-  const handleModifySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleModifySubmit = async (e: React.FormEvent, inPlace: boolean = false) => {
+    if (e) e.preventDefault();
     if (!modifyPrompt.trim() || !selectedJob) return;
 
     setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append("prompt", modifyPrompt);
-    formData.append("parentId", selectedJob.jobId);
 
     try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
-      if (data.success) {
-        setModifyPrompt("");
-        await fetchJobs();
-        
-        const newJob: Job = {
-          jobId: data.jobId,
-          parentId: selectedJob.jobId,
-          prompt: modifyPrompt,
-          componentType: null,
-          manufacturingMethod: null,
-          material: null,
-          status: "pending",
-          progress: 0,
-          logs: "[SYSTEM] Initiating design iteration...\n",
-          originalDimensions: null,
-          finalDimensions: null,
-          outputFilePath: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        setSelectedJob(newJob);
-        setIsCreating(false);
+      if (inPlace) {
+        const res = await fetch(`/api/jobs/${selectedJob.jobId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: modifyPrompt })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setModifyPrompt("");
+          await fetchJobs();
+          
+          // Re-set selected job with the pending state for in-place re-compilation
+          setSelectedJob({
+            ...selectedJob,
+            prompt: `${selectedJob.prompt}, and then: ${modifyPrompt}`,
+            status: "pending",
+            progress: 0,
+            logs: `[SYSTEM] Re-submitting job for in-place modifications.\n[USER UPDATE] ${modifyPrompt}\n`,
+            outputFilePath: null
+          });
+        } else {
+          alert(`Failed to update job: ${data.error}`);
+        }
+      } else {
+        const formData = new FormData();
+        formData.append("prompt", modifyPrompt);
+        formData.append("parentId", selectedJob.jobId);
+
+        const res = await fetch("/api/jobs", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+          setModifyPrompt("");
+          await fetchJobs();
+          
+          const newJob: Job = {
+            jobId: data.jobId,
+            parentId: selectedJob.jobId,
+            prompt: modifyPrompt,
+            componentType: null,
+            manufacturingMethod: null,
+            material: null,
+            status: "pending",
+            progress: 0,
+            logs: "[SYSTEM] Initiating design iteration...\n",
+            originalDimensions: null,
+            finalDimensions: null,
+            outputFilePath: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          setSelectedJob(newJob);
+          setIsCreating(false);
+        } else {
+          alert(`Failed to submit modification: ${data.error}`);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Modify submit error:", err);
-      alert("Failed to submit design modification.");
+      alert(`Failed to submit design modification: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -815,7 +843,7 @@ export default function Dashboard() {
 
               {/* Conversational Design Modifier Chat */}
               {(selectedJob.status === "completed" || selectedJob.status === "failed") && (
-                <form onSubmit={handleModifySubmit} className="glass-panel rounded-xl p-6 glow-card space-y-4">
+                <form onSubmit={(e) => handleModifySubmit(e, false)} className="glass-panel rounded-xl p-6 glow-card space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold font-mono tracking-widest text-slate-400 uppercase flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
@@ -825,7 +853,7 @@ export default function Dashboard() {
                       Modifying Version: v{getVersionTimeline().findIndex(t => t.jobId === selectedJob.jobId) + 1}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <input
                       type="text"
                       value={modifyPrompt}
@@ -834,14 +862,26 @@ export default function Dashboard() {
                       disabled={isSubmitting}
                       className="flex-grow bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/30 transition-all font-sans text-slate-100 placeholder-slate-500"
                     />
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || !modifyPrompt.trim()}
-                      className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-mono font-bold text-xs py-3.5 px-6 rounded-xl flex items-center space-x-2 shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                    >
-                      <span>SEND MODIFICATION</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => handleModifySubmit(e as any, true)}
+                        disabled={isSubmitting || !modifyPrompt.trim()}
+                        className="bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 font-mono font-bold text-xs py-3.5 px-5 rounded-xl flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        title="Update this version in-place"
+                      >
+                        <span>EDIT CURRENT</span>
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || !modifyPrompt.trim()}
+                        className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-mono font-bold text-xs py-3.5 px-6 rounded-xl flex items-center space-x-2 shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        title="Create a new version iteration"
+                      >
+                        <span>NEW VERSION</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}
