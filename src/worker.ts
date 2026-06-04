@@ -49,6 +49,27 @@ async function processJob(job: Job) {
     await log(`[SYSTEM] Starting autonomous engineering research phase...`);
     await updateJob(jobId, { status: "researching", progress: 10 });
 
+    // Load parent schema if this is an iteration
+    let parentSchema = undefined;
+    if (job.parentId) {
+      const parentDir = path.join(WORK_DIR, job.parentId);
+      const parentUpdatedPath = path.join(parentDir, "schema_updated.json");
+      const parentPath = path.join(parentDir, "schema.json");
+      let chosenPath = fs.existsSync(parentUpdatedPath) ? parentUpdatedPath : (fs.existsSync(parentPath) ? parentPath : null);
+      
+      if (chosenPath) {
+        try {
+          const rawParent = fs.readFileSync(chosenPath, "utf-8");
+          parentSchema = JSON.parse(rawParent);
+          await log(`[SYSTEM] Loaded parent design schema from Job ${job.parentId} for design iteration.`);
+        } catch (e: any) {
+          await log(`[SYSTEM] Warning: Failed to load parent schema: ${e.message}`);
+        }
+      } else {
+        await log(`[SYSTEM] Warning: Parent schema file not found in job ${job.parentId}. Starting design from scratch.`);
+      }
+    }
+
     // Run agentic loop (Ollama + Web Search)
     const extractedSchema = await runAgentLoop(
       jobId,
@@ -56,7 +77,8 @@ async function processJob(job: Job) {
       pdfTextContent,
       async (msg) => {
         await log(msg);
-      }
+      },
+      parentSchema
     );
 
     await log(`[SYSTEM] Research complete. Extracted dimensions parsed successfully.`);

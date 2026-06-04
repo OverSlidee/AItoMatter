@@ -16,6 +16,7 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS jobs (
       jobId TEXT PRIMARY KEY,
+      parentId TEXT,
       prompt TEXT NOT NULL,
       componentType TEXT,
       manufacturingMethod TEXT,
@@ -30,10 +31,16 @@ db.serialize(() => {
       updatedAt TEXT NOT NULL
     )
   `);
+  
+  // Safe migration for existing databases
+  db.run("ALTER TABLE jobs ADD COLUMN parentId TEXT", (err) => {
+    // Ignore error if column already exists
+  });
 });
 
 export interface Job {
   jobId: string;
+  parentId: string | null;
   prompt: string;
   componentType: string | null;
   manufacturingMethod: string | null;
@@ -48,14 +55,14 @@ export interface Job {
   updatedAt: string;
 }
 
-export function createJob(jobId: string, prompt: string): Promise<void> {
+export function createJob(jobId: string, prompt: string, parentId: string | null = null): Promise<void> {
   return new Promise((resolve, reject) => {
     const now = new Date().toISOString();
     const query = `
-      INSERT INTO jobs (jobId, prompt, status, progress, logs, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO jobs (jobId, parentId, prompt, status, progress, logs, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    db.run(query, [jobId, prompt, "pending", 0, `[SYSTEM] Job created.\n`, now, now], (err) => {
+    db.run(query, [jobId, parentId, prompt, "pending", 0, `[SYSTEM] Job created.\n`, now, now], (err) => {
       if (err) reject(err);
       else resolve();
     });

@@ -13,7 +13,8 @@ export async function runAgentLoop(
   jobId: string,
   userPrompt: string,
   pdfTextContent?: string,
-  logCallback?: (message: string) => void
+  logCallback?: (message: string) => void,
+  parentSchema?: any
 ): Promise<ExtractedDimensions> {
   const log = logCallback || console.log;
   log(`[AGENT] Starting agent loop for Job ${jobId}`);
@@ -21,6 +22,9 @@ export async function runAgentLoop(
   let inputContext = `User Request: "${userPrompt}"`;
   if (pdfTextContent) {
     inputContext += `\n\nUploaded PDF Datasheet Text Content (extracted):\n${pdfTextContent}`;
+  }
+  if (parentSchema) {
+    inputContext += `\n\n### ITERATION CONTEXT:\nThis is a modification request of a previously finalized design. You MUST modify the existing design to accommodate the changes rather than designing from scratch.\nPrevious Finalized Design Schema (use this as the base structure):\n${JSON.stringify(parentSchema, null, 2)}`;
   }
 
   const systemPrompt = `You are VeloLabs Computational Engineering Parser Agent.
@@ -106,6 +110,15 @@ GUIDELINES FOR POPULAR CUSTOM GEOMETRIES:
   4. Visualization choice: To keep the gears visible in the WebGL viewer rather than hiding them inside a solid box casing, prefer designing the housing as an "open-frame gearbox" using a mounting plate (a flat box backing plate placed behind the gears, e.g., offset along the Z-axis, with bored shaft holes) instead of an enclosed solid box.
 - Engravings / Text: There is no native font renderer. You must represent text engravings symbolically by subtracting small, thin box or cylinder pockets from the surface (e.g., subtracting a pocket box where the name is etched, or subtracting thin primitive lines forming the word).
 - Tablet Pens: A pen must include the pen body (cylinder), the pen tip (cylinder or cone-approximation), and any buttons or custom grip areas (unioned box/cylinders) securely stacked end-to-end using the center positioning math above. Do not leave gaps.
+
+### ITERATIVE MODIFICATIONS:
+If you receive "ITERATION CONTEXT", you are performing an evolutionary update to a previous design:
+- Look at the previous schema's 'componentType', 'material', 'manufacturingMethod', 'dimensions', and 'geometryTree'.
+- Maintain the same material and manufacturing method unless asked to change them.
+- To add elements, create a 'union' node with the existing 'geometryTree' on one side (e.g. 'left') and the new shape primitive on the other side ('right'), with appropriate relative positioning offsets.
+- To subtract/drill elements, create a 'difference' node with the existing 'geometryTree' on the 'left' and the subtraction primitive on the 'right'.
+- To modify dimensions of existing primitives, locate them in the 'geometryTree' or under 'dimensions' and update their values in the new finalized schema.
+- Preserve the previous structure where possible.
 
 ### SEARCH TOOL INSTRUCTIONS:
 If you do not know the standard dimensions of components requested (like a 4kW motor shaft diameter or standard keyway size) or the material strength, you MUST run a search:

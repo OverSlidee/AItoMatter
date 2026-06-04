@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const prompt = formData.get("prompt") as string;
     const file = formData.get("file") as File | null;
+    const parentId = formData.get("parentId") as string | null;
     
     if (!prompt) {
       return NextResponse.json({ error: "Missing prompt parameter." }, { status: 400 });
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert job into SQLite with status = "pending"
-    await createJob(jobId, prompt);
+    await createJob(jobId, prompt, parentId);
 
     // If PDF text was found, we will append a system log and store it temporarily in a public workspace
     if (pdfTextContent) {

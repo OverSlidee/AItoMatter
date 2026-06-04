@@ -21,6 +21,7 @@ import ThreeDViewer from "../components/ThreeDViewer";
 
 interface Job {
   jobId: string;
+  parentId: string | null;
   prompt: string;
   componentType: string | null;
   manufacturingMethod: "FDM_Plastic" | "SLA_Resin" | "SLM_Metal" | null;
@@ -45,8 +46,90 @@ export default function Dashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [modifyPrompt, setModifyPrompt] = useState("");
 
   const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Find all ancestors and descendants in a linear chain of iterations
+  const getVersionTimeline = () => {
+    if (!selectedJob) return [];
+    
+    const chainMap = new Map<string, Job>();
+    chainMap.set(selectedJob.jobId, selectedJob);
+    
+    const jobMap = new Map<string, Job>();
+    jobs.forEach(j => jobMap.set(j.jobId, j));
+    
+    // Trace parents upwards
+    let parentId = selectedJob.parentId;
+    while (parentId && jobMap.has(parentId)) {
+      const parent = jobMap.get(parentId)!;
+      chainMap.set(parent.jobId, parent);
+      parentId = parent.parentId;
+    }
+    
+    // Trace children downwards
+    let currentId = selectedJob.jobId;
+    while (true) {
+      const child = jobs.find(j => j.parentId === currentId);
+      if (child) {
+        chainMap.set(child.jobId, child);
+        currentId = child.jobId;
+      } else {
+        break;
+      }
+    }
+    
+    return Array.from(chainMap.values()).sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  };
+
+  const handleModifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modifyPrompt.trim() || !selectedJob) return;
+
+    setIsSubmitting(true);
+    const formData = new FormData();
+    formData.append("prompt", modifyPrompt);
+    formData.append("parentId", selectedJob.jobId);
+
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        setModifyPrompt("");
+        await fetchJobs();
+        
+        const newJob: Job = {
+          jobId: data.jobId,
+          parentId: selectedJob.jobId,
+          prompt: modifyPrompt,
+          componentType: null,
+          manufacturingMethod: null,
+          material: null,
+          status: "pending",
+          progress: 0,
+          logs: "[SYSTEM] Initiating design iteration...\n",
+          originalDimensions: null,
+          finalDimensions: null,
+          outputFilePath: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setSelectedJob(newJob);
+        setIsCreating(false);
+      }
+    } catch (err) {
+      console.error("Modify submit error:", err);
+      alert("Failed to submit design modification.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Fetch all jobs
   const fetchJobs = async () => {
@@ -167,6 +250,7 @@ export default function Dashboard() {
           // Fallback if jobs state hasn't updated yet
           setSelectedJob({
             jobId: data.jobId,
+            parentId: null,
             prompt,
             componentType: null,
             manufacturingMethod: null,
@@ -390,6 +474,39 @@ export default function Dashboard() {
           selectedJob && (
             <div className="p-6 md:p-8 space-y-6 flex-grow flex flex-col max-w-6xl mx-auto w-full">
               
+              {/* Version History Breadcrumb Timeline */}
+              {(() => {
+                const timeline = getVersionTimeline();
+                if (timeline.length <= 1) return null;
+                return (
+                  <div className="glass-panel rounded-xl p-3 flex flex-wrap items-center gap-2 border border-slate-800/80 bg-slate-900/20 shrink-0 shadow-lg">
+                    <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider mr-2">
+                      Design Iteration Timeline:
+                    </span>
+                    {timeline.map((t, idx) => {
+                      const isActive = t.jobId === selectedJob.jobId;
+                      return (
+                        <div key={t.jobId} className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setSelectedJob(t)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_10px_rgba(6,182,212,0.25)]"
+                                : "bg-slate-950/80 border border-slate-800/60 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                            }`}
+                          >
+                            v{idx + 1}: {t.prompt.substring(0, 24)}{t.prompt.length > 24 ? "..." : ""}
+                          </button>
+                          {idx < timeline.length - 1 && (
+                            <span className="text-slate-600 text-xs font-bold font-mono">→</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
               {/* Job Header */}
               <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-5 gap-4">
                 <div>
@@ -624,6 +741,39 @@ export default function Dashboard() {
                   })()}
 
                 </div>
+              )}
+
+              {/* Conversational Design Modifier Chat */}
+              {(selectedJob.status === "completed" || selectedJob.status === "failed") && (
+                <form onSubmit={handleModifySubmit} className="glass-panel rounded-xl p-6 glow-card space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold font-mono tracking-widest text-slate-400 uppercase flex items-center space-x-2">
+                      <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
+                      <span>Iterative Assistant — Modify Model Design</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                      Modifying Version: v{getVersionTimeline().findIndex(t => t.jobId === selectedJob.jobId) + 1}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="text"
+                      value={modifyPrompt}
+                      onChange={(e) => setModifyPrompt(e.target.value)}
+                      placeholder='e.g. "add a smaller gear offset by 30mm" or "change the pipe length to 120mm"'
+                      disabled={isSubmitting}
+                      className="flex-grow bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/30 transition-all font-sans text-slate-100 placeholder-slate-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !modifyPrompt.trim()}
+                      className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-mono font-bold text-xs py-3.5 px-6 rounded-xl flex items-center space-x-2 shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    >
+                      <span>SEND MODIFICATION</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </form>
               )}
 
             </div>
