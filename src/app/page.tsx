@@ -1,896 +1,494 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { 
-  FileText, 
-  Upload, 
-  Settings, 
+  ArrowRight, 
+  Layers, 
+  Cpu, 
+  Database, 
+  Sparkles, 
   CheckCircle, 
   AlertTriangle, 
-  Cpu, 
-  Terminal as TerminalIcon, 
-  Download, 
-  Plus, 
-  Search, 
-  Database,
-  ArrowRight,
-  Sparkles,
-  Layers,
-  Trash2
+  Settings, 
+  ChevronRight, 
+  Activity, 
+  Gauge, 
+  ShieldCheck,
+  Zap
 } from "lucide-react";
-import ThreeDViewer from "../components/ThreeDViewer";
+import * as THREE from "three";
 
-interface Job {
-  jobId: string;
-  parentId: string | null;
-  prompt: string;
-  componentType: string | null;
-  manufacturingMethod: "FDM_Plastic" | "SLA_Resin" | "SLM_Metal" | null;
-  material: string | null;
-  status: "pending" | "researching" | "queueing" | "compiling" | "completed" | "failed";
-  progress: number;
-  logs: string;
-  originalDimensions: string | null;
-  finalDimensions: string | null;
-  outputFilePath: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export default function LandingPage() {
+  const threeRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<"gear" | "bracket" | "pipe" | "housing">("gear");
 
-export default function Dashboard() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [isCreating, setIsCreating] = useState(true);
-  
-  // Form State
-  const [prompt, setPrompt] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [modifyPrompt, setModifyPrompt] = useState("");
-
-  const logsEndRef = useRef<HTMLDivElement>(null);
-
-  // Find all ancestors and descendants in a linear chain of iterations
-  const getVersionTimeline = () => {
-    if (!selectedJob) return [];
-    
-    const chainMap = new Map<string, Job>();
-    chainMap.set(selectedJob.jobId, selectedJob);
-    
-    const jobMap = new Map<string, Job>();
-    jobs.forEach(j => jobMap.set(j.jobId, j));
-    
-    // Trace parents upwards
-    let parentId = selectedJob.parentId;
-    while (parentId && jobMap.has(parentId)) {
-      const parent = jobMap.get(parentId)!;
-      chainMap.set(parent.jobId, parent);
-      parentId = parent.parentId;
+  // Presets mapping to prompts
+  const presets = {
+    gear: {
+      title: "Spur Gear",
+      desc: "Compile mechanical spur gears with customized tooth configurations, module width, and keyed shaft bores.",
+      prompt: "Design a spur gear with 24 teeth, module 2.5, face width 20mm, and a 12mm shaft bore with a standard 3mm keyway, made of SLM Titanium.",
+      spec: "Module: 2.5 | Teeth: 24 | Material: Titanium"
+    },
+    bracket: {
+      title: "Cantilever Bracket",
+      desc: "Build load-bearing mounting brackets customized for specific load weights, bolt spacings, and thicknesses.",
+      prompt: "Design a structural cantilever bracket supporting a 600N vertical shear load. Base dimensions: width 50mm, length 90mm, thickness 6mm, with two 6mm bolt holes spaced 35mm apart.",
+      spec: "Load: 600 N | Thickness: 6mm | Material: SLM Steel"
+    },
+    pipe: {
+      title: "Fluid Junction Pipe",
+      desc: "Assemble watertight fluid pipes and manifolds with physics audits for internal hoop stress thresholds.",
+      prompt: "Design a high-pressure fluid pipe junction. Bore diameter 32mm, wall thickness 4mm, total length 150mm. Grade: FDM Plastic, verified for 120 PSI internal flow.",
+      spec: "Bore: 32mm | Max Pressure: 120 PSI | Material: PLA Plastic"
+    },
+    housing: {
+      title: "Motor Housing Faceplate",
+      desc: "Generate custom mounts and motor faceplates aligning with standard NEMA dimensions and tolerances.",
+      prompt: "Design a NEMA 17 motor housing plate. Bolt spacing 31mm, pilot diameter 22mm, pilot depth 2mm, main body thickness 8mm with a 5mm central shaft clearance bore.",
+      spec: "NEMA 17 Compatible | Pilot: 22mm | Material: SLA Resin"
     }
-    
-    // Trace children downwards
-    let currentId = selectedJob.jobId;
-    while (true) {
-      const child = jobs.find(j => j.parentId === currentId);
-      if (child) {
-        chainMap.set(child.jobId, child);
-        currentId = child.jobId;
-      } else {
-        break;
-      }
-    }
-    
-    return Array.from(chainMap.values()).sort((a, b) => 
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  };
+
+  // Three.js Mockup CAD animation
+  useEffect(() => {
+    if (!threeRef.current) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x020617); // Match body background
+
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      threeRef.current.clientWidth / threeRef.current.clientHeight,
+      0.1,
+      100
     );
-  };
+    camera.position.set(18, 12, 18);
 
-  const handleModifySubmit = async (e: React.FormEvent, inPlace: boolean = false) => {
-    if (e) e.preventDefault();
-    if (!modifyPrompt.trim() || !selectedJob) return;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(threeRef.current.clientWidth, threeRef.current.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    setIsSubmitting(true);
+    threeRef.current.innerHTML = "";
+    threeRef.current.appendChild(renderer.domElement);
 
-    try {
-      if (inPlace) {
-        const res = await fetch(`/api/jobs/${selectedJob.jobId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: modifyPrompt })
-        });
-        const data = await res.json();
-        if (data.success) {
-          setModifyPrompt("");
-          await fetchJobs();
-          
-          // Re-set selected job with the pending state for in-place re-compilation
-          setSelectedJob({
-            ...selectedJob,
-            prompt: `${selectedJob.prompt}, and then: ${modifyPrompt}`,
-            status: "pending",
-            progress: 0,
-            logs: `[SYSTEM] Re-submitting job for in-place modifications.\n[USER UPDATE] ${modifyPrompt}\n`,
-            outputFilePath: null
-          });
-        } else {
-          alert(`Failed to update job: ${data.error}`);
-        }
-      } else {
-        const formData = new FormData();
-        formData.append("prompt", modifyPrompt);
-        formData.append("parentId", selectedJob.jobId);
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
 
-        const res = await fetch("/api/jobs", {
-          method: "POST",
-          body: formData
-        });
-        const data = await res.json();
-        if (data.success) {
-          setModifyPrompt("");
-          await fetchJobs();
-          
-          const newJob: Job = {
-            jobId: data.jobId,
-            parentId: selectedJob.jobId,
-            prompt: modifyPrompt,
-            componentType: null,
-            manufacturingMethod: null,
-            material: null,
-            status: "pending",
-            progress: 0,
-            logs: "[SYSTEM] Initiating design iteration...\n",
-            originalDimensions: null,
-            finalDimensions: null,
-            outputFilePath: null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-          setSelectedJob(newJob);
-          setIsCreating(false);
-        } else {
-          alert(`Failed to submit modification: ${data.error}`);
-        }
-      }
-    } catch (err: any) {
-      console.error("Modify submit error:", err);
-      alert(`Failed to submit design modification: ${err.message}`);
-    } finally {
-      setIsSubmitting(false);
+    const dirLight1 = new THREE.DirectionalLight(0x06b6d4, 0.8);
+    dirLight1.position.set(5, 10, 5);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0xa855f7, 0.6);
+    dirLight2.position.set(-5, -5, 5);
+    scene.add(dirLight2);
+
+    // Grid helper
+    const gridHelper = new THREE.GridHelper(30, 20, 0x06b6d4, 0x1e293b);
+    gridHelper.position.y = -4;
+    scene.add(gridHelper);
+
+    // Create a composite mechanical preview shape (a hub with gears / brackets)
+    const previewGroup = new THREE.Group();
+
+    // Central base cylinder
+    const baseGeo = new THREE.CylinderGeometry(2.5, 2.5, 2.5, 32);
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.8,
+      roughness: 0.2
+    });
+    const baseMesh = new THREE.Mesh(baseGeo, metalMat);
+    previewGroup.add(baseMesh);
+
+    // Raised collar
+    const collarGeo = new THREE.CylinderGeometry(1.6, 1.6, 3.2, 32);
+    const collarMat = new THREE.MeshStandardMaterial({
+      color: 0x06b6d4,
+      metalness: 0.9,
+      roughness: 0.15
+    });
+    const collarMesh = new THREE.Mesh(collarGeo, collarMat);
+    previewGroup.add(collarMesh);
+
+    // Bored hole through center
+    const boreGeo = new THREE.CylinderGeometry(0.8, 0.8, 3.4, 32);
+    const boreMat = new THREE.MeshBasicMaterial({
+      color: 0x020617,
+      side: THREE.DoubleSide
+    });
+    const boreMesh = new THREE.Mesh(boreGeo, boreMat);
+    previewGroup.add(boreMesh);
+
+    // Outer gear ribs
+    const ribCount = 12;
+    const ribGeo = new THREE.BoxGeometry(0.5, 2.5, 0.8);
+    for (let i = 0; i < ribCount; i++) {
+      const angle = (i * 2 * Math.PI) / ribCount;
+      const rib = new THREE.Mesh(ribGeo, metalMat);
+      rib.position.set(Math.cos(angle) * 2.5, 0, Math.sin(angle) * 2.5);
+      rib.rotation.y = -angle;
+      previewGroup.add(rib);
     }
-  };
 
-  // Fetch all jobs
-  const fetchJobs = async () => {
-    try {
-      const res = await fetch("/api/jobs");
-      const data = await res.json();
-      if (data.jobs) {
-        setJobs(data.jobs);
-        
-        // Update selected job details if currently viewing one
-        if (selectedJob) {
-          const updated = data.jobs.find((j: Job) => j.jobId === selectedJob.jobId);
-          if (updated) {
-            setSelectedJob(updated);
-          } else {
-            setSelectedJob(null);
-            setIsCreating(true);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching jobs:", err);
-    }
-  };
+    // Outer orbiting ring
+    const ringGeo = new THREE.TorusGeometry(5, 0.15, 8, 48);
+    ringGeo.rotateX(Math.PI / 2);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xa855f7,
+      transparent: true,
+      opacity: 0.5
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    previewGroup.add(ringMesh);
 
-  const handleDeleteJob = async (jobId: string) => {
-    if (!confirm("Are you sure you want to delete this job run? This will recursively delete all child iterations and permanently remove files from the VPS.")) {
-      return;
-    }
-    
-    try {
-      const res = await fetch(`/api/jobs/${jobId}`, {
-        method: "DELETE"
-      });
-      const data = await res.json();
-      if (data.success) {
-        await fetchJobs();
-      } else {
-        alert(`Failed to delete job: ${data.error}`);
-      }
-    } catch (err: any) {
-      console.error("Delete job error:", err);
-      alert(`Failed to delete job: ${err.message}`);
-    }
-  };
+    scene.add(previewGroup);
 
-  useEffect(() => {
-    fetchJobs();
-    const interval = setInterval(fetchJobs, 5000);
-    return () => clearInterval(interval);
-  }, [selectedJob]);
-
-  // Polling for selected job when active
-  useEffect(() => {
-    if (!selectedJob) return;
-    const active = ["pending", "researching", "queueing", "compiling"].includes(selectedJob.status);
-    if (!active) return;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/jobs/${selectedJob.jobId}`);
-        const data = await res.json();
-        if (data.job) {
-          setSelectedJob(data.job);
-          // Auto-scroll terminal
-          if (logsEndRef.current) {
-            logsEndRef.current.scrollIntoView({ behavior: "smooth" });
-          }
-        }
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
+    // Animation loop
+    let animFrame: number;
+    const animate = () => {
+      animFrame = requestAnimationFrame(animate);
+      previewGroup.rotation.y += 0.005;
+      previewGroup.rotation.x = Math.sin(Date.now() * 0.0005) * 0.1;
+      
+      renderer.render(scene, camera);
     };
+    animate();
 
-    const interval = setInterval(poll, 1500);
-    return () => clearInterval(interval);
-  }, [selectedJob]);
+    const handleResize = () => {
+      if (!threeRef.current) return;
+      camera.aspect = threeRef.current.clientWidth / threeRef.current.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(threeRef.current.clientWidth, threeRef.current.clientHeight);
+    };
+    window.addEventListener("resize", handleResize);
 
-  // Auto scroll terminal logs
-  useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [selectedJob?.logs]);
-
-  // Handle Drag & Drop
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
-  };
-
-  // Submit new compilation job
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!prompt.trim()) return;
-
-    setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append("prompt", prompt);
-    if (file) {
-      formData.append("file", file);
-    }
-
-    try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Reset form
-        setPrompt("");
-        setFile(null);
-        setIsCreating(false);
-        
-        // Fetch jobs and select the new one
-        await fetchJobs();
-        const newJob = jobs.find(j => j.jobId === data.jobId);
-        if (newJob) {
-          setSelectedJob(newJob);
-        } else {
-          // Fallback if jobs state hasn't updated yet
-          setSelectedJob({
-            jobId: data.jobId,
-            parentId: null,
-            prompt,
-            componentType: null,
-            manufacturingMethod: null,
-            material: null,
-            status: "pending",
-            progress: 0,
-            logs: "[SYSTEM] Initiating job...\n",
-            originalDimensions: null,
-            finalDimensions: null,
-            outputFilePath: null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Compilation error:", err);
-      alert("Failed to submit engineering request.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getStatusColor = (status: Job["status"]) => {
-    switch (status) {
-      case "completed": return "text-emerald-400 bg-emerald-950/40 border-emerald-900";
-      case "failed": return "text-red-400 bg-red-950/40 border-red-900";
-      case "compiling": return "text-purple-400 bg-purple-950/40 border-purple-900 animate-pulse";
-      case "researching": return "text-cyan-400 bg-cyan-950/40 border-cyan-900";
-      default: return "text-slate-400 bg-slate-900/60 border-slate-800";
-    }
-  };
-
-  const formatKeyName = (key: string) => {
-    return key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
-  };
-
-  const getCaseInsensitiveValue = (obj: any, searchKey: string) => {
-    if (!obj) return undefined;
-    const lowerKey = searchKey.toLowerCase();
-    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === lowerKey);
-    return foundKey ? obj[foundKey] : undefined;
-  };
-
-  const formatValue = (key: string, val: number) => {
-    const k = key.toLowerCase();
-    if (k === "toothcount") {
-      return `${Math.round(val)}`;
-    }
-    if (k === "module") {
-      return `${Number(val).toFixed(2)}`;
-    }
-    if (k === "pressurepsi") {
-      return `${Number(val).toFixed(1)} PSI`;
-    }
-    if (k === "loadnewtons") {
-      return `${Number(val).toFixed(0)} N`;
-    }
-    return `${Number(val).toFixed(2)}mm`;
-  };
-
-  // Check if a dimension was modified by physics or tolerances
-  const isDimensionModified = (key: string, origVal: number | undefined, finalVal: number | undefined) => {
-    if (origVal === undefined || finalVal === undefined) return false;
-    return Math.abs(Number(origVal) - Number(finalVal)) > 0.001;
-  };
+    return () => {
+      cancelAnimationFrame(animFrame);
+      window.removeEventListener("resize", handleResize);
+      renderer.dispose();
+    };
+  }, []);
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row min-h-screen text-slate-100 font-sans">
+    <div className="flex-1 flex flex-col min-h-screen text-slate-200 relative bg-[#020617]">
       
-      {/* Sidebar: Lists past generations */}
-      <aside className="w-full md:w-80 glass-panel border-r border-slate-800 flex flex-col shrink-0 md:sticky md:top-0 md:h-screen">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Layers className="h-5 w-5 text-cyan-400" />
-            <span className="font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+      {/* Decorative Orbs */}
+      <div className="absolute top-10 left-10 w-96 h-96 cyan-glow-orb pointer-events-none -z-10" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 purple-glow-orb pointer-events-none -z-10" />
+
+      {/* Header */}
+      <header className="w-full border-b border-slate-900 bg-slate-950/40 backdrop-blur-md sticky top-0 z-50 transition-all">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2.5 group">
+            <div className="p-1.5 rounded-lg bg-cyan-950/40 border border-cyan-800/30 group-hover:border-cyan-400/80 transition-all">
+              <Layers className="h-5 w-5 text-cyan-400" />
+            </div>
+            <span className="font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 group-hover:from-cyan-300 group-hover:to-purple-300 transition-all text-sm">
               VELOLABS CEM
             </span>
+          </Link>
+          <nav className="hidden md:flex items-center space-x-8 text-xs font-mono tracking-widest text-slate-400">
+            <a href="#features" className="hover:text-cyan-400 transition-colors uppercase">Pipeline</a>
+            <a href="#showroom" className="hover:text-cyan-400 transition-colors uppercase">Showroom</a>
+            <a href="#stats" className="hover:text-cyan-400 transition-colors uppercase">Metrics</a>
+          </nav>
+          <div>
+            <Link
+              href="/workspace"
+              className="px-4 py-2 rounded-xl bg-cyan-950/40 border border-cyan-900/60 hover:bg-cyan-900/60 hover:border-cyan-400/80 text-cyan-400 text-xs font-bold font-mono tracking-wider transition-all flex items-center space-x-2 cursor-pointer shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+            >
+              <span>LAUNCH WORKSPACE</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
-          <button
-            onClick={() => {
-              setSelectedJob(null);
-              setIsCreating(true);
-            }}
-            className="p-1.5 rounded-lg bg-cyan-950/40 border border-cyan-900/60 hover:bg-cyan-900/60 hover:border-cyan-400/80 text-cyan-400 transition-all cursor-pointer"
-            title="Start New Generation"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
         </div>
+      </header>
 
-        {/* Search / List header */}
-        <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-800/40 flex justify-between">
-          <span>COMPILATION RUNS</span>
-          <span>{jobs.length} total</span>
-        </div>
-
-        {/* Jobs list */}
-        <div className="flex-grow overflow-y-auto divide-y divide-slate-900/40 p-2 space-y-1">
-          {jobs.length === 0 ? (
-            <div className="p-4 text-center text-slate-500 text-xs font-mono">
-              No historical runs found
-            </div>
-          ) : (
-            jobs.map((job) => (
-              <div
-                key={job.jobId}
-                onClick={() => {
-                  setSelectedJob(job);
-                  setIsCreating(false);
-                }}
-                className={`group w-full text-left p-3 rounded-lg border transition-all cursor-pointer relative ${
-                  selectedJob?.jobId === job.jobId
-                    ? "bg-slate-800/40 border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.05)]"
-                    : "bg-transparent border-transparent hover:bg-slate-900/30 hover:border-slate-800/60"
-                }`}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-mono text-[10px] text-slate-500 truncate max-w-[120px]">
-                    {job.jobId}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-[9px] px-2 py-0.5 rounded border uppercase font-mono ${getStatusColor(job.status)}`}>
-                      {job.status}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteJob(job.jobId);
-                      }}
-                      className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-all cursor-pointer"
-                      title="Delete Run"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-300 font-semibold line-clamp-2 leading-relaxed">
-                  {job.prompt}
-                </p>
-                {job.componentType && (
-                  <div className="mt-2 flex items-center space-x-2 text-[10px] font-mono text-slate-400">
-                    <span className="bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
-                      {job.componentType.toUpperCase()}
-                    </span>
-                    <span>{job.material}</span>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </aside>
-
-      {/* Main Panel */}
-      <main className="flex-1 flex flex-col bg-slate-950/20 min-h-screen">
+      {/* Hero Section */}
+      <section className="max-w-7xl mx-auto px-6 py-12 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
         
-        {/* Form to submit new compilation */}
-        {isCreating ? (
-          <div className="max-w-3xl mx-auto w-full p-6 md:py-12">
+        {/* Left: Text copy */}
+        <div className="lg:col-span-7 space-y-8 animate-fade-in-up">
+          <div className="inline-flex items-center space-x-2 bg-cyan-950/20 border border-cyan-850 px-3.5 py-1.5 rounded-full text-cyan-400 text-[11px] font-mono shadow-[0_0_12px_rgba(6,182,212,0.05)]">
+            <Sparkles className="h-3.5 w-3.5 animate-pulse text-cyan-400" />
+            <span>Autonomous Computational Engineering Model (CEM)</span>
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
+              <span className="text-white">Translate Prompts into </span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-indigo-400">
+                Solid Watertight CAD Geometry
+              </span>
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed max-w-xl">
+              An agentic compilation pipeline mapping technical specifications and PDF manufacturer datasheets into structural solid geometry. Features automated physics-driven stress overrides and tolerance auditing.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link
+              href="/workspace"
+              className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-mono font-bold text-xs py-4 px-8 rounded-xl flex items-center justify-center space-x-2.5 transition-all shadow-[0_0_20px_rgba(6,182,212,0.15)] hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] cursor-pointer"
+            >
+              <span>LAUNCH COMPILER WORKSPACE</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a
+              href="#showroom"
+              className="bg-slate-900/60 border border-slate-800 hover:border-slate-600/80 text-slate-300 hover:text-white font-mono font-bold text-xs py-4 px-8 rounded-xl flex items-center justify-center space-x-2 transition-all"
+            >
+              <span>BROWSE TEMPLATES</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Right: Rotating Three.js Viewport */}
+        <div className="lg:col-span-5 h-[360px] md:h-[450px] glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-slate-800/80 animate-fade-in-up animation-delay-100">
+          <div ref={threeRef} className="w-full h-full" />
+          <div className="absolute top-4 left-4 bg-slate-950/80 border border-slate-850 px-3 py-1 rounded-md text-[10px] font-mono text-cyan-400 flex items-center space-x-2 shadow-md">
+            <Activity className="h-3 w-3 animate-pulse" />
+            <span>REAL-TIME CSG PREVIEW</span>
+          </div>
+          <div className="absolute bottom-4 right-4 bg-slate-950/80 border border-slate-850 p-3 rounded-lg max-w-xs space-y-1.5 shadow-md">
+            <div className="flex justify-between items-center text-[9px] font-mono text-slate-500">
+              <span>STATUS</span>
+              <span className="text-emerald-400">READY</span>
+            </div>
+            <p className="text-[10px] text-slate-300 font-mono font-bold truncate">
+              VeloLabs-CEM Solid Compiler v1.2
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Section */}
+      <section id="features" className="border-t border-slate-900 bg-slate-950/30 py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-6 space-y-16">
+          <div className="text-center space-y-3">
+            <h2 className="text-xs font-bold font-mono tracking-widest text-cyan-400 uppercase">Automated Pipeline</h2>
+            <p className="text-2xl md:text-4xl font-extrabold tracking-tight text-white">How The Computational Voxel Compiler Works</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            {/* Platform Banner */}
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center space-x-2 bg-cyan-950/20 border border-cyan-800/40 px-3 py-1 rounded-full text-cyan-400 text-xs font-mono mb-4">
-                <Sparkles className="h-3.5 w-3.5 animate-spin" />
-                <span>Next-Gen Autonomous Voxel Engine</span>
+            {/* Step 1 */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800/60 flex flex-col space-y-4 hover:border-cyan-500/20 transition-all">
+              <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-850 text-cyan-400 self-start">
+                <Sparkles className="h-6 w-6" />
               </div>
-              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-3">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-400 to-purple-400">
-                  Computational Engineering Platform
-                </span>
-              </h1>
-              <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-                Provide design parameters or upload a manufacturer datasheet. The AI agent extracts dimensions, runs structural overrides, and C# compiles a watertight `.3mf` print file.
+              <h3 className="text-sm font-bold font-mono tracking-wider text-white uppercase">1. Ingest Specs</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Describe your mechanical intent using natural language, or upload an engineering datasheet. Our LLM extracts precise dimensional boundaries.
               </p>
             </div>
 
-            {/* Ingestion Glass Form */}
-            <form onSubmit={handleSubmit} className="glass-panel rounded-2xl p-6 glow-card space-y-6">
-              
-              {/* Text Prompt */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold font-mono tracking-widest text-slate-400 uppercase">
-                  1. Define Component Intent
-                </label>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder='e.g., "Design a heavy bracket to support 450N load, made of SLM Titanium, width 40mm, length 80mm with a 5mm screw hole" or "NEMA 17 bracket housing made of FDM plastic"'
-                  rows={4}
-                  className="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-sm font-sans focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/30 transition-all leading-relaxed"
-                />
+            {/* Step 2 */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800/60 flex flex-col space-y-4 hover:border-cyan-500/20 transition-all">
+              <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-850 text-purple-400 self-start">
+                <Cpu className="h-6 w-6" />
               </div>
-
-              {/* Datasheet Upload Area */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold font-mono tracking-widest text-slate-400 uppercase">
-                  2. Upload PDF Datasheet (Optional)
-                </label>
-                <div
-                  onDragEnter={handleDrag}
-                  onDragOver={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
-                    dragActive 
-                      ? "border-cyan-400 bg-cyan-950/20" 
-                      : "border-slate-800 bg-slate-950/40 hover:bg-slate-900/20 hover:border-slate-700"
-                  }`}
-                  onClick={() => document.getElementById("pdf-upload")?.click()}
-                >
-                  <input
-                    id="pdf-upload"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <Upload className={`h-8 w-8 mb-2 ${file ? "text-cyan-400" : "text-slate-500"}`} />
-                  {file ? (
-                    <div>
-                      <p className="text-sm font-medium text-cyan-400">{file.name}</p>
-                      <p className="text-[10px] text-slate-500 font-mono">{(file.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-medium text-slate-300">Drag & drop your PDF datasheet here</p>
-                      <p className="text-xs text-slate-500 mt-1">Supports standard engineering table layouts</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting || !prompt.trim()}
-                className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white py-3.5 px-6 rounded-xl text-sm font-bold font-mono tracking-wider flex items-center justify-center space-x-2 transition-all shadow-[0_0_20px_rgba(6,182,212,0.15)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] cursor-pointer"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Cpu className="h-4 w-4 animate-spin" />
-                    <span>EXTRACTING DATA & COMPILING...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>START AUTONOMOUS COMPILATION</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        ) : (
-          // Active Job Viewer Screen
-          selectedJob && (
-            <div className="p-6 md:p-8 space-y-6 flex-grow flex flex-col max-w-6xl mx-auto w-full">
-              
-              {/* Version History Breadcrumb Timeline */}
-              {(() => {
-                const timeline = getVersionTimeline();
-                if (timeline.length <= 1) return null;
-                return (
-                  <div className="glass-panel rounded-xl p-3 flex flex-wrap items-center gap-2 border border-slate-800/80 bg-slate-900/20 shrink-0 shadow-lg">
-                    <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider mr-2">
-                      Design Iteration Timeline:
-                    </span>
-                    {timeline.map((t, idx) => {
-                      const isActive = t.jobId === selectedJob.jobId;
-                      return (
-                        <div key={t.jobId} className="flex items-center space-x-2">
-                          <button
-                            onClick={() => setSelectedJob(t)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
-                              isActive
-                                ? "bg-cyan-500 text-slate-950 font-bold shadow-[0_0_10px_rgba(6,182,212,0.25)]"
-                                : "bg-slate-950/80 border border-slate-800/60 text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                            }`}
-                          >
-                            v{idx + 1}: {t.prompt.substring(0, 24)}{t.prompt.length > 24 ? "..." : ""}
-                          </button>
-                          {idx < timeline.length - 1 && (
-                            <span className="text-slate-600 text-xs font-bold font-mono">→</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-
-              {/* Job Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-5 gap-4">
-                <div>
-                  <div className="flex items-center space-x-2 text-xs font-mono text-slate-500 mb-1">
-                    <span>JOB ID:</span>
-                    <span className="text-slate-400 font-bold">{selectedJob.jobId}</span>
-                  </div>
-                  <h2 className="text-xl font-bold font-sans">
-                    {selectedJob.prompt}
-                  </h2>
-                </div>
-
-                {selectedJob.outputFilePath && (
-                  <a
-                    href={selectedJob.outputFilePath}
-                    download
-                    className="self-start md:self-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-mono font-bold text-xs py-2.5 px-4 rounded-lg flex items-center space-x-2 border border-emerald-400/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all cursor-pointer"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>DOWNLOAD PRODUCTION 3MF</span>
-                  </a>
-                )}
-              </div>
-
-              {/* Progress Tracker Stepper */}
-              <div className="glass-panel rounded-xl p-4">
-                <div className="flex justify-between text-xs font-mono text-slate-400 mb-2">
-                  <span>SYSTEM PIPELINE TRACKER</span>
-                  <span className="text-cyan-400 font-bold">{selectedJob.progress}%</span>
-                </div>
-                <div className="w-full bg-slate-900 border border-slate-800 h-2 rounded-full overflow-hidden mb-4">
-                  <div
-                    className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-500"
-                    style={{ width: `${selectedJob.progress}%` }}
-                  />
-                </div>
-                
-                {/* Stepper Status Indicators */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-                  <div className="flex items-center space-x-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ${
-                      selectedJob.progress >= 10 ? "bg-cyan-400 step-glow-cyan" : "bg-slate-800"
-                    }`} />
-                    <span className="text-[11px] font-mono text-slate-300">1. Ingest Prompt</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ${
-                      selectedJob.progress >= 40 ? "bg-cyan-400 step-glow-cyan" : "bg-slate-800"
-                    }`} />
-                    <span className="text-[11px] font-mono text-slate-300">2. Research Agent</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ${
-                      selectedJob.progress >= 60 ? "bg-purple-400 step-glow-purple" : "bg-slate-800"
-                    }`} />
-                    <span className="text-[11px] font-mono text-slate-300">3. Physics check</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ${
-                      selectedJob.progress >= 100 ? (selectedJob.status === "failed" ? "bg-red-400" : "bg-emerald-400") : "bg-slate-800"
-                    }`} />
-                    <span className="text-[11px] font-mono text-slate-300">4. Voxel Output</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic split pane */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                
-                {/* Left Side: Real-time Terminal Log Console */}
-                <div className="glass-panel rounded-xl overflow-hidden border border-slate-800/80 flex flex-col h-[400px]">
-                  <div className="bg-slate-950/80 border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between shrink-0">
-                    <div className="flex items-center space-x-2">
-                      <TerminalIcon className="h-4 w-4 text-cyan-400" />
-                      <span className="text-xs font-mono font-semibold tracking-wider text-slate-400">
-                        COMPILER LOG CONSOLE
-                      </span>
-                    </div>
-                    {/* Glowing status */}
-                    <div className="flex items-center space-x-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping" />
-                      <span className="text-[10px] font-mono text-slate-500 uppercase">{selectedJob.status}</span>
-                    </div>
-                  </div>
-                  <div className="flex-grow p-4 overflow-y-auto font-mono text-[11px] leading-relaxed bg-[#030509] space-y-1.5 select-text">
-                    {selectedJob.logs.split("\n").map((line, idx) => {
-                      if (!line.trim()) return null;
-                      let color = "text-slate-400";
-                      if (line.includes("[PHYSICS OVERRIDE]")) color = "text-amber-400 font-bold";
-                      else if (line.includes("[SYSTEM ERROR]")) color = "text-red-400 font-bold";
-                      else if (line.includes("[TOLERANCE ENGINE]")) color = "text-purple-400";
-                      else if (line.includes("[SYSTEM]")) color = "text-cyan-400";
-                      else if (line.includes("[WEB SEARCH]")) color = "text-slate-500";
-                      else if (line.includes("SUCCESSFUL")) color = "text-emerald-400 font-bold";
-                      
-                      return (
-                        <div key={idx} className={color}>
-                          {line}
-                        </div>
-                      );
-                    })}
-                    <div ref={logsEndRef} />
-                  </div>
-                </div>
-
-                {/* Right Side: Interactive 3D Model Canvas Viewer */}
-                <div className="glass-panel rounded-xl overflow-hidden h-[400px]">
-                  {selectedJob.status === "completed" && selectedJob.finalDimensions ? (
-                    <ThreeDViewer
-                      componentType={selectedJob.componentType!}
-                      dimensions={selectedJob.finalDimensions}
-                      outputFilePath={selectedJob.outputFilePath}
-                    />
-                  ) : selectedJob.status === "failed" ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-center p-6 space-y-2">
-                      <AlertTriangle className="h-12 w-12 text-red-500/70" />
-                      <h4 className="font-mono text-sm text-red-400">Compilation Failed</h4>
-                      <p className="text-xs max-w-xs leading-relaxed">
-                        Refer to the log console to inspect engineering errors or LLM schema stabilization faults.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-center p-6 space-y-4">
-                      <Cpu className="h-12 w-12 text-cyan-500/30 animate-spin" />
-                      <div className="space-y-1">
-                        <h4 className="font-mono text-sm text-cyan-400">Compiling 3D Geometry</h4>
-                        <p className="text-xs max-w-xs leading-relaxed">
-                          PicoGK solid voxels are being generated via Boolean addition & subtraction...
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-              </div>
-
-              {/* Bottom Block: Mechanical Parameters Auditing Grid */}
-              {selectedJob.status === "completed" && selectedJob.originalDimensions && selectedJob.finalDimensions && (
-                <div className="glass-panel rounded-xl p-6 space-y-6">
-                  
-                  {/* Title & Metadata */}
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h3 className="font-mono text-sm font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 flex items-center space-x-2">
-                      <Database className="h-4 w-4 text-cyan-400" />
-                      <span>DATA BRIDGE AUDITING METRICS</span>
-                    </h3>
-                    <div className="flex items-center space-x-4 text-xs font-mono">
-                      <span>Method: <strong className="text-purple-400">{selectedJob.manufacturingMethod}</strong></span>
-                      <span>Material: <strong className="text-cyan-400">{selectedJob.material}</strong></span>
-                    </div>
-                  </div>
-
-                  {/* Comparative parameter cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {(() => {
-                      const orig = JSON.parse(selectedJob.originalDimensions || "{}");
-                      const final = JSON.parse(selectedJob.finalDimensions || "{}");
-                      
-                      // Filter keys to exclude irrelevant properties that are 0 in both original and final schemas
-                      const keys = Object.keys(final).filter((key) => {
-                        const oVal = getCaseInsensitiveValue(orig, key);
-                        const fVal = final[key];
-                        return (oVal !== undefined && Number(oVal) > 0) || (fVal !== undefined && Number(fVal) > 0);
-                      });
-
-                      return keys.map((key) => {
-                        const oVal = getCaseInsensitiveValue(orig, key);
-                        const fVal = final[key];
-                        const modified = isDimensionModified(key, oVal, fVal);
-
-                        return (
-                          <div
-                            key={key}
-                            className={`p-3 rounded-lg border transition-all ${
-                              modified
-                                ? "bg-amber-950/20 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.03)]"
-                                : "bg-slate-900/40 border-slate-800/80"
-                            }`}
-                          >
-                            <span className="block text-[10px] font-mono text-slate-400 uppercase tracking-wide">
-                              {formatKeyName(key)}
-                            </span>
-                            
-                            <div className="flex items-baseline space-x-2 mt-1">
-                              <span className="text-lg font-bold font-mono text-slate-100">
-                                {formatValue(key, Number(fVal))}
-                              </span>
-
-                              {modified && oVal !== undefined && (
-                                <>
-                                  <span className="text-xs text-slate-500 line-through">
-                                    {formatValue(key, Number(oVal))}
-                                  </span>
-                                  <span className="text-[10px] font-mono bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded font-semibold flex items-center space-x-0.5">
-                                    <AlertTriangle className="h-3 w-3 inline" />
-                                    <span>ADJUSTED</span>
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-
-                  {/* Notification banner on overrides */}
-                  {(() => {
-                    const orig = JSON.parse(selectedJob.originalDimensions || "{}");
-                    const final = JSON.parse(selectedJob.finalDimensions || "{}");
-                    const overridesApplied = Object.keys(final).some((k) => {
-                      const oVal = getCaseInsensitiveValue(orig, k);
-                      return isDimensionModified(k, oVal, final[k]);
-                    });
-                    
-                    if (overridesApplied) {
-                      return (
-                        <div className="bg-amber-950/20 border border-amber-900/60 p-4 rounded-lg flex items-start space-x-3 text-amber-300">
-                          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                          <div className="text-xs leading-relaxed space-y-1">
-                            <h5 className="font-mono font-bold uppercase tracking-wider">Physics Safety / Tolerances Applied</h5>
-                            <p>
-                              The C# compilation runtime adjusted your original parameters (highlighted in orange). Wall thicknesses have been scaled up to satisfy structural Hoop Stress and cantilever shear loads, and internal diameters have been expanded to offset print shrinkage.
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div className="bg-emerald-950/20 border border-emerald-900/60 p-4 rounded-lg flex items-start space-x-3 text-emerald-300">
-                          <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                          <div className="text-xs leading-relaxed space-y-1">
-                            <h5 className="font-mono font-bold uppercase tracking-wider">All Parameters Safe</h5>
-                            <p>
-                              Your extracted dimensions fully satisfy the necessary structural safety limits. No mechanical overrides were triggered. Standard manufacturing tolerances have been applied.
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-                  })()}
-
-                </div>
-              )}
-
-              {/* Conversational Design Modifier Chat */}
-              {(selectedJob.status === "completed" || selectedJob.status === "failed") && (
-                <form onSubmit={(e) => handleModifySubmit(e, false)} className="glass-panel rounded-xl p-6 glow-card space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold font-mono tracking-widest text-slate-400 uppercase flex items-center space-x-2">
-                      <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
-                      <span>Iterative Assistant — Modify Model Design</span>
-                    </label>
-                    <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                      Modifying Version: v{getVersionTimeline().findIndex(t => t.jobId === selectedJob.jobId) + 1}
-                    </span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <input
-                      type="text"
-                      value={modifyPrompt}
-                      onChange={(e) => setModifyPrompt(e.target.value)}
-                      placeholder='e.g. "add a smaller gear offset by 30mm" or "change the pipe length to 120mm"'
-                      disabled={isSubmitting}
-                      className="flex-grow bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/30 transition-all font-sans text-slate-100 placeholder-slate-500"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => handleModifySubmit(e as any, true)}
-                        disabled={isSubmitting || !modifyPrompt.trim()}
-                        className="bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 font-mono font-bold text-xs py-3.5 px-5 rounded-xl flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                        title="Update this version in-place"
-                      >
-                        <span>EDIT CURRENT</span>
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isSubmitting || !modifyPrompt.trim()}
-                        className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-mono font-bold text-xs py-3.5 px-6 rounded-xl flex items-center space-x-2 shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                        title="Create a new version iteration"
-                      >
-                        <span>NEW VERSION</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              )}
-
+              <h3 className="text-sm font-bold font-mono tracking-wider text-white uppercase">2. Research Agent</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                The agent parses inputs and cross-references manufacturing method limitations (FDM, SLA, SLM) to construct candidate parameters.
+              </p>
             </div>
-          )
-        )}
-      </main>
-      
+
+            {/* Step 3 */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800/60 flex flex-col space-y-4 hover:border-cyan-500/20 transition-all">
+              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-850 text-amber-400 self-start">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <h3 className="text-sm font-bold font-mono tracking-wider text-white uppercase">3. Physics Safety Check</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                A localized physics validation loop recalculates wall thicknesses, hoop stresses, and sheer tolerances, enforcing overrides where mechanical failure is likely.
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800/60 flex flex-col space-y-4 hover:border-cyan-500/20 transition-all">
+              <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-850 text-emerald-400 self-start">
+                <Database className="h-6 w-6" />
+              </div>
+              <h3 className="text-sm font-bold font-mono tracking-wider text-white uppercase">4. Solid Voxel Compilation</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Compiles the refined boundaries into C# PicoGK voxel nodes, producing a watertight production-ready `.3mf` solid object ready for fabrication.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Preset Showroom Section */}
+      <section id="showroom" className="max-w-7xl mx-auto px-6 py-16 md:py-24 space-y-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-3">
+            <h2 className="text-xs font-bold font-mono tracking-widest text-cyan-400 uppercase">Engineering Library</h2>
+            <p className="text-2xl md:text-4xl font-extrabold tracking-tight text-white">Component Templates</p>
+          </div>
+          
+          {/* Quick-switch selectors */}
+          <div className="bg-slate-950/80 border border-slate-900 p-1.5 rounded-xl flex flex-wrap gap-1">
+            {Object.keys(presets).map((key) => {
+              const k = key as keyof typeof presets;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setActiveTab(k)}
+                  className={`px-4 py-2 rounded-lg text-xs font-mono font-bold tracking-wider uppercase transition-all cursor-pointer ${
+                    activeTab === k 
+                      ? "bg-cyan-500 text-slate-950 font-bold shadow-md"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {presets[k].title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Selected Preset Details Glass Card */}
+        <div className="glass-panel p-6 md:p-8 rounded-2xl border border-slate-800/80 glow-card grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 space-y-6">
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950/40 border border-cyan-900/60 px-2.5 py-0.5 rounded-md tracking-wider uppercase">
+                {presets[activeTab].spec}
+              </span>
+              <h3 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+                {presets[activeTab].title} Template
+              </h3>
+              <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
+                {presets[activeTab].desc}
+              </p>
+            </div>
+
+            {/* Prompt showcase */}
+            <div className="bg-slate-950/80 border border-slate-850 p-4 rounded-xl space-y-3">
+              <span className="block text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold">Generated Intent:</span>
+              <p className="text-xs text-slate-300 font-mono italic leading-relaxed">
+                "{presets[activeTab].prompt}"
+              </p>
+            </div>
+
+            <Link
+              href={`/workspace?prompt=${encodeURIComponent(presets[activeTab].prompt)}`}
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-mono font-bold text-xs py-3 px-6 rounded-xl shadow-md transition-all cursor-pointer"
+            >
+              <span>LOAD TEMPLATE IN WORKSPACE</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="lg:col-span-5 aspect-square bg-[#030611] rounded-xl border border-slate-900 p-6 flex flex-col justify-between">
+            <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 border-b border-slate-900 pb-3">
+              <span>PARAMETER MATRIX</span>
+              <span>CEM-01</span>
+            </div>
+            
+            <div className="space-y-3 py-4 flex-grow flex flex-col justify-center">
+              <div className="flex justify-between items-baseline text-xs">
+                <span className="font-mono text-slate-400 uppercase tracking-wider">Tolerance Range</span>
+                <span className="font-mono font-bold text-cyan-400">+/- 0.05 mm</span>
+              </div>
+              <div className="flex justify-between items-baseline text-xs">
+                <span className="font-mono text-slate-400 uppercase tracking-wider">Hoop Stress Limit</span>
+                <span className="font-mono font-bold text-purple-400">Enforced</span>
+              </div>
+              <div className="flex justify-between items-baseline text-xs">
+                <span className="font-mono text-slate-400 uppercase tracking-wider">Voxel Grid Density</span>
+                <span className="font-mono font-bold text-slate-200">5.0 M voxels/cm³</span>
+              </div>
+              <div className="flex justify-between items-baseline text-xs">
+                <span className="font-mono text-slate-400 uppercase tracking-wider">Watertight Proofing</span>
+                <span className="font-mono font-bold text-emerald-400 flex items-center gap-1">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>Verified</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="text-[9px] font-mono text-slate-500 bg-slate-950 border border-slate-900 p-2 rounded text-center">
+              PicoGK engine automatically scales dimensions to fit mechanical bounds.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Metrics Section */}
+      <section id="stats" className="border-t border-slate-900 bg-slate-950/40 py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-12">
+          
+          <div className="space-y-4">
+            <h2 className="text-xs font-bold font-mono tracking-widest text-cyan-400 uppercase">Operations Audit</h2>
+            <p className="text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">Platform Operational Performance Metrics</p>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              We monitor the compiler queue live on VPS targets, ensuring fast solid mesh generation, database records cleanliness, and verified mechanical strength.
+            </p>
+          </div>
+
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            
+            {/* Stat 1 */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800/60 flex flex-col justify-between text-left space-y-4">
+              <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">Compilations Completed</span>
+              <div className="space-y-1">
+                <p className="text-3xl md:text-4xl font-extrabold font-mono text-cyan-400">1,248+</p>
+                <p className="text-[10px] font-mono text-slate-400">Recursive design versions</p>
+              </div>
+            </div>
+
+            {/* Stat 2 */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800/60 flex flex-col justify-between text-left space-y-4">
+              <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">Avg Compiling latency</span>
+              <div className="space-y-1">
+                <p className="text-3xl md:text-4xl font-extrabold font-mono text-purple-400">0.08 s</p>
+                <p className="text-[10px] font-mono text-slate-400">PicoGK Boolean operations</p>
+              </div>
+            </div>
+
+            {/* Stat 3 */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800/60 flex flex-col justify-between text-left space-y-4">
+              <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">Watertight Proofing</span>
+              <div className="space-y-1">
+                <p className="text-3xl md:text-4xl font-extrabold font-mono text-emerald-400">100 %</p>
+                <p className="text-[10px] font-mono text-slate-400">Manifold-tested meshes</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* Onboarding Call to Action */}
+      <section className="max-w-4xl mx-auto px-6 py-16 md:py-24 text-center space-y-8">
+        <div className="space-y-3">
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">Start Building Solid Objects</h2>
+          <p className="text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
+            Configure custom parameters, input engineering requirements, and compile watertight structures in seconds.
+          </p>
+        </div>
+        <Link
+          href="/workspace"
+          className="inline-flex items-center space-x-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-mono font-bold text-xs py-4.5 px-10 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all cursor-pointer hover:shadow-[0_0_25px_rgba(6,182,212,0.25)]"
+        >
+          <span>ENTER THE COMPILER WORKSPACE</span>
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </section>
+
+      {/* Footer */}
+      <footer className="w-full border-t border-slate-900 py-8 bg-slate-950/20 text-center text-[10px] font-mono text-slate-500">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span>&copy; {new Date().getFullYear()} VeloLabs. All Rights Reserved.</span>
+          <span>Computational Engineering Model Platform (CEM)</span>
+        </div>
+      </footer>
+
     </div>
   );
 }
