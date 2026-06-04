@@ -20,7 +20,12 @@ import {
   Trash2,
   Home,
   RefreshCw,
-  Info
+  Info,
+  ShieldAlert,
+  Sliders,
+  Check,
+  Gauge,
+  Activity
 } from "lucide-react";
 import ThreeDViewer from "../../components/ThreeDViewer";
 
@@ -390,53 +395,68 @@ export default function Workspace() {
     <div className="flex-1 flex flex-col md:flex-row min-h-screen text-slate-100 font-sans relative">
       
       {/* Decorative Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 cyan-glow-orb pointer-events-none -z-10" />
-      <div className="absolute bottom-1/3 right-1/4 w-96 h-96 purple-glow-orb pointer-events-none -z-10" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 cyan-glow-orb pointer-events-none -z-10 opacity-50" />
+      <div className="absolute bottom-1/3 right-1/4 w-96 h-96 purple-glow-orb pointer-events-none -z-10 opacity-50" />
+      <div className="dot-grid" />
 
       {/* Sidebar: Lists past generations */}
-      <aside className="w-full md:w-80 glass-panel border-r border-slate-800/60 flex flex-col shrink-0 md:sticky md:top-0 md:h-screen z-10">
+      <aside className="w-full md:w-80 glass-panel border-r border-slate-800/60 flex flex-col shrink-0 md:sticky md:top-0 md:h-screen z-10 bg-slate-950/60">
         
         {/* Header Branding */}
-        <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2.5 group">
-            <div className="p-1.5 rounded-lg bg-cyan-950/40 border border-cyan-800/30 group-hover:border-cyan-400/80 transition-all">
-              <Layers className="h-5 w-5 text-cyan-400" />
-            </div>
-            <span className="font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 group-hover:from-cyan-300 group-hover:to-purple-300 transition-all text-sm">
-              VELOLABS CEM
-            </span>
-          </Link>
-          <div className="flex space-x-2">
-            <Link
-              href="/"
-              className="p-2 rounded-lg bg-slate-900/60 border border-slate-800/80 hover:bg-slate-800/80 hover:border-slate-600/80 text-slate-400 hover:text-slate-100 transition-all cursor-pointer"
-              title="Return to Home"
-            >
-              <Home className="h-4 w-4" />
+        <div className="p-5 border-b border-slate-900 flex flex-col space-y-3">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center space-x-2.5 group">
+              <div className="p-1.5 rounded-lg bg-cyan-950/40 border border-cyan-800/30 group-hover:border-cyan-400/80 transition-all">
+                <Layers className="h-5 w-5 text-cyan-400" />
+              </div>
+              <span className="font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 group-hover:from-cyan-300 group-hover:to-purple-300 transition-all text-sm">
+                VELOLABS CEM
+              </span>
             </Link>
-            <button
-              onClick={() => {
-                setSelectedJob(null);
-                setIsCreating(true);
-              }}
-              className="p-2 rounded-lg bg-cyan-950/40 border border-cyan-900/60 hover:bg-cyan-900/60 hover:border-cyan-400/80 text-cyan-400 transition-all cursor-pointer"
-              title="Start New Generation"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+            <div className="flex space-x-2">
+              <Link
+                href="/"
+                className="p-2 rounded-lg bg-slate-900/60 border border-slate-800/80 hover:bg-slate-800/80 hover:border-slate-600/80 text-slate-400 hover:text-slate-100 transition-all cursor-pointer"
+                title="Return to Home"
+              >
+                <Home className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => {
+                  setSelectedJob(null);
+                  setIsCreating(true);
+                }}
+                className="p-2 rounded-lg bg-cyan-950/40 border border-cyan-900/60 hover:bg-cyan-900/60 hover:border-cyan-400/80 text-cyan-400 transition-all cursor-pointer shadow-[0_0_12px_rgba(6,182,212,0.1)]"
+                title="Start New Generation"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Sidebar telemetry metrics */}
+          <div className="grid grid-cols-2 gap-2 text-[9px] font-mono text-slate-500 bg-slate-950 p-2 rounded-lg border border-slate-900/60">
+            <div className="flex justify-between">
+              <span>SYS.QUEUE:</span>
+              <span className="text-emerald-400 font-bold">OK</span>
+            </div>
+            <div className="flex justify-between border-l border-slate-900 pl-2">
+              <span>VOXELS:</span>
+              <span className="text-cyan-400 font-bold">5.0M</span>
+            </div>
           </div>
         </div>
 
         {/* Search / List header */}
-        <div className="px-5 py-3 text-[10px] font-bold font-mono tracking-widest text-slate-500 border-b border-slate-800/30 flex justify-between items-center bg-slate-950/20">
+        <div className="px-5 py-3 text-[10px] font-bold font-mono tracking-widest text-slate-500 border-b border-slate-900 flex justify-between items-center bg-slate-950/30">
           <span>COMPILATION RUNS</span>
-          <span className="bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400">{jobs.length} Runs</span>
+          <span className="bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-bold">{jobs.length} runs</span>
         </div>
 
         {/* Jobs list */}
         <div className="flex-grow overflow-y-auto divide-y divide-slate-900/40 p-3 space-y-2">
           {jobs.length === 0 ? (
-            <div className="py-8 text-center text-slate-500 text-xs font-mono border border-dashed border-slate-800/80 rounded-xl">
+            <div className="py-8 text-center text-slate-500 text-xs font-mono border border-dashed border-slate-900 rounded-xl bg-slate-950/20">
               No historical runs found
             </div>
           ) : (
@@ -449,8 +469,8 @@ export default function Workspace() {
                 }}
                 className={`group w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer relative ${
                   selectedJob?.jobId === job.jobId
-                    ? "bg-slate-900/60 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.08)]"
-                    : "bg-transparent border-transparent hover:bg-slate-900/30 hover:border-slate-800/50"
+                    ? "bg-slate-900/50 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.08)]"
+                    : "bg-transparent border-transparent hover:bg-slate-900/20 hover:border-slate-850"
                 }`}
               >
                 <div className="flex justify-between items-center mb-1.5">
@@ -478,7 +498,7 @@ export default function Workspace() {
                 </p>
                 {job.componentType && (
                   <div className="mt-2.5 flex items-center space-x-2 text-[9px] font-mono text-slate-400">
-                    <span className="bg-slate-950/80 px-2 py-0.5 rounded border border-slate-800/80 text-cyan-400/80 uppercase tracking-wider">
+                    <span className="bg-slate-950/80 px-2 py-0.5 rounded border border-slate-900/80 text-cyan-400/80 uppercase tracking-wider font-bold">
                       {job.componentType.replace("_", " ")}
                     </span>
                     <span>•</span>
@@ -492,7 +512,7 @@ export default function Workspace() {
       </aside>
 
       {/* Main Panel */}
-      <main className="flex-grow flex flex-col bg-slate-950/10 min-h-screen">
+      <main className="flex-grow flex flex-col bg-slate-950/10 min-h-screen z-10">
         
         {/* Form to submit new compilation */}
         {isCreating ? (
@@ -500,12 +520,12 @@ export default function Workspace() {
             
             {/* Platform Banner */}
             <div className="text-center space-y-4">
-              <div className="inline-flex items-center space-x-2 bg-cyan-950/30 border border-cyan-800/40 px-4 py-1.5 rounded-full text-cyan-400 text-[11px] font-mono shadow-[0_0_15px_rgba(6,182,212,0.05)]">
-                <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+              <div className="inline-flex items-center space-x-2 bg-cyan-950/30 border border-cyan-800/40 px-4 py-1.5 rounded-full text-cyan-400 text-[10px] font-mono shadow-[0_0_15px_rgba(6,182,212,0.05)]">
+                <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
                 <span>Next-Gen Autonomous Voxel Engine</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-300 to-purple-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-300 to-purple-400 font-black">
                   Computational Engineering Platform
                 </span>
               </h1>
@@ -527,7 +547,7 @@ export default function Workspace() {
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder='e.g., "Design a heavy bracket to support 450N load, made of SLM Titanium, width 40mm, length 80mm with a 5mm screw hole" or "NEMA 17 bracket housing made of FDM plastic"'
                   rows={4}
-                  className="w-full bg-slate-950/80 border border-slate-800/60 rounded-xl p-4 text-sm font-sans focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/30 transition-all leading-relaxed placeholder-slate-500 text-slate-100"
+                  className="w-full bg-slate-950/80 border border-slate-900/60 rounded-xl p-4 text-sm font-sans focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/30 transition-all leading-relaxed placeholder-slate-500 text-slate-100"
                 />
               </div>
 
@@ -580,7 +600,7 @@ export default function Workspace() {
               >
                 {isSubmitting ? (
                   <>
-                    <Cpu className="h-4 w-4 animate-spin text-cyan-200" />
+                    <Cpu className="h-4 w-4 animate-spin text-cyan-250" />
                     <span>EXTRACTING DATA & COMPILING...</span>
                   </>
                 ) : (
@@ -631,7 +651,7 @@ export default function Workspace() {
               })()}
 
               {/* Job Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800/80 pb-5 gap-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-900 pb-5 gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2 text-[10px] font-mono text-slate-500">
                     <span className="bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-slate-400">JOB RUN</span>
@@ -712,7 +732,7 @@ export default function Workspace() {
                       </span>
                     </div>
                     {/* Glowing status */}
-                    <div className="flex items-center space-x-2.5 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-800/80">
+                    <div className="flex items-center space-x-2.5 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-850">
                       <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
                       <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">{selectedJob.status}</span>
                     </div>
@@ -734,6 +754,11 @@ export default function Workspace() {
                         </div>
                       );
                     })}
+                    {/* Pulsing CLI caret indicator */}
+                    <div className="text-cyan-400 font-bold flex items-center">
+                      <span>velolabs-cem:~$&nbsp;</span>
+                      <span className="w-1.5 h-3 bg-cyan-400 animate-pulse inline-block" />
+                    </div>
                     <div ref={logsEndRef} />
                   </div>
                 </div>
@@ -791,7 +816,7 @@ export default function Workspace() {
                   </div>
 
                   {/* Comparative parameter cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {(() => {
                       const orig = JSON.parse(selectedJob.originalDimensions || "{}");
                       const final = JSON.parse(selectedJob.finalDimensions || "{}");
@@ -808,20 +833,36 @@ export default function Workspace() {
                         const fVal = final[key];
                         const modified = isDimensionModified(key, oVal, fVal);
 
+                        // Visual stats display comparison ratio
+                        const percentageChange = oVal && Number(oVal) > 0 
+                          ? Math.min(100, Math.max(10, Math.round((Number(fVal) / Number(oVal)) * 100))) 
+                          : 100;
+
                         return (
                           <div
                             key={key}
-                            className={`p-4 rounded-xl border transition-all ${
+                            className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${
                               modified
                                 ? "bg-amber-950/10 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.02)]"
                                 : "bg-slate-900/30 border-slate-800/80 hover:border-slate-700/80"
                             }`}
                           >
-                            <span className="block text-[9px] font-mono text-slate-400 uppercase tracking-widest font-bold">
-                              {formatKeyName(key)}
-                            </span>
+                            <div className="flex justify-between items-start">
+                              <span className="block text-[9px] font-mono text-slate-400 uppercase tracking-widest font-bold">
+                                {formatKeyName(key)}
+                              </span>
+                              {!modified ? (
+                                <span className="p-0.5 rounded-full bg-emerald-950/30 border border-emerald-900/40 text-emerald-450">
+                                  <Check className="h-3 w-3" />
+                                </span>
+                              ) : (
+                                <span className="p-0.5 rounded-full bg-amber-955/30 border border-amber-900/40 text-amber-450 animate-pulse">
+                                  <Sliders className="h-3 w-3" />
+                                </span>
+                              )}
+                            </div>
                             
-                            <div className="flex items-baseline space-x-2.5 mt-2">
+                            <div className="flex items-baseline space-x-2.5 mt-3 mb-2.5">
                               <span className="text-base font-bold font-mono text-slate-100">
                                 {formatValue(key, Number(fVal))}
                               </span>
@@ -831,12 +872,19 @@ export default function Workspace() {
                                   <span className="text-xs text-slate-500 line-through font-mono">
                                     {formatValue(key, Number(oVal))}
                                   </span>
-                                  <span className="text-[8px] font-mono bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-900/40 font-bold flex items-center space-x-0.5 tracking-wider uppercase">
-                                    <AlertTriangle className="h-2.5 w-2.5 inline" />
-                                    <span>ADJUSTED</span>
+                                  <span className="text-[8px] font-mono bg-amber-500/10 text-amber-450 px-2 py-0.5 rounded border border-amber-900/40 font-bold tracking-wider uppercase">
+                                    ADJUSTED
                                   </span>
                                 </>
                               )}
+                            </div>
+
+                            {/* HUD scale indicator graph */}
+                            <div className="w-full bg-slate-950/80 h-1 rounded-full overflow-hidden mt-1">
+                              <div 
+                                className={`h-full rounded-full ${modified ? "bg-amber-550" : "bg-cyan-550"}`}
+                                style={{ width: `${percentageChange}%` }}
+                              />
                             </div>
                           </div>
                         );
@@ -858,7 +906,10 @@ export default function Workspace() {
                         <div className="bg-amber-950/10 border border-amber-900/60 p-4 rounded-xl flex items-start space-x-3 text-amber-300">
                           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                           <div className="text-xs leading-relaxed space-y-1">
-                            <h5 className="font-mono font-bold uppercase tracking-wider">Physics Safety / Tolerances Applied</h5>
+                            <h5 className="font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5">
+                              <ShieldAlert className="h-4 w-4 inline text-amber-400" />
+                              <span>Physics Safety / Tolerances Applied</span>
+                            </h5>
                             <p className="text-slate-400">
                               The C# compilation runtime adjusted your original parameters (highlighted in orange). Wall thicknesses have been scaled up to satisfy structural Hoop Stress and cantilever shear loads, and internal diameters have been expanded to offset print shrinkage.
                             </p>
@@ -870,7 +921,10 @@ export default function Workspace() {
                         <div className="bg-emerald-950/10 border border-emerald-900/60 p-4 rounded-xl flex items-start space-x-3 text-emerald-300">
                           <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                           <div className="text-xs leading-relaxed space-y-1">
-                            <h5 className="font-mono font-bold uppercase tracking-wider">All Parameters Safe</h5>
+                            <h5 className="font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5">
+                              <CheckCircle className="h-4 w-4 inline text-emerald-400" />
+                              <span>All Parameters Safe</span>
+                            </h5>
                             <p className="text-slate-400">
                               Your extracted dimensions fully satisfy the necessary structural safety limits. No mechanical overrides were triggered. Standard manufacturing tolerances have been applied.
                             </p>
@@ -909,7 +963,7 @@ export default function Workspace() {
                         type="button"
                         onClick={(e) => handleModifySubmit(e as any, true)}
                         disabled={isSubmitting || !modifyPrompt.trim()}
-                        className="bg-slate-900/60 border border-slate-800 hover:border-slate-600/85 hover:bg-slate-850 text-slate-200 font-mono font-bold text-xs py-3.5 px-5 rounded-xl flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="bg-slate-900/60 border border-slate-850 hover:border-slate-650 hover:bg-slate-850 text-slate-200 font-mono font-bold text-xs py-3.5 px-5 rounded-xl flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         title="Update this version in-place"
                       >
                         <span>EDIT CURRENT</span>
