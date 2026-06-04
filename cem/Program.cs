@@ -62,9 +62,50 @@ namespace VeloLabs.CEM
                 File.WriteAllText(updatedPath, updatedJson);
 
                 // 5. Initialize PicoGK in headless mode
-                // Voxel resolution of 0.25mm for high geometric accuracy
+                // We compute the voxel size dynamically. For smaller objects, we keep high precision (0.25mm).
+                // For larger components, we scale it up to prevent giant 100MB+ mesh files.
                 float voxelSizeMM = 0.25f;
-                Console.WriteLine($"[CEM ENGINE] Initializing Voxel Kernel (Resolution: {voxelSizeMM}mm)...");
+                double maxSize = 0.0;
+                
+                if (schema.Dimensions != null)
+                {
+                    maxSize = Math.Max(maxSize, schema.Dimensions.Width);
+                    maxSize = Math.Max(maxSize, schema.Dimensions.Height);
+                    maxSize = Math.Max(maxSize, schema.Dimensions.Depth);
+                    maxSize = Math.Max(maxSize, schema.Dimensions.PipeLength);
+                    maxSize = Math.Max(maxSize, schema.Dimensions.BracketLength);
+                    maxSize = Math.Max(maxSize, schema.Dimensions.BracketWidth);
+                    maxSize = Math.Max(maxSize, schema.Dimensions.HousingLength);
+                    
+                    if (schema.Dimensions.Module > 0 && schema.Dimensions.ToothCount > 0)
+                    {
+                        double pitchDia = schema.Dimensions.Module * schema.Dimensions.ToothCount;
+                        maxSize = Math.Max(maxSize, pitchDia);
+                        maxSize = Math.Max(maxSize, schema.Dimensions.FaceWidth);
+                    }
+                }
+                
+                if (schema.GeometryTree != null)
+                {
+                    double maxCsgCoord = GetMaxCsgExtent(schema.GeometryTree);
+                    maxSize = Math.Max(maxSize, maxCsgCoord);
+                }
+
+                if (maxSize > 150.0)
+                {
+                    voxelSizeMM = 1.0f; // Large parts (like chassis): 1.0mm is plenty
+                }
+                else if (maxSize > 80.0)
+                {
+                    voxelSizeMM = 0.5f; // Medium parts: 0.5mm
+                }
+                else
+                {
+                    voxelSizeMM = 0.25f; // Small precision parts: 0.25mm
+                }
+
+                Console.WriteLine($"[CEM ENGINE] Maximum dimension size detected: {maxSize:F2}mm");
+                Console.WriteLine($"[CEM ENGINE] Initializing Voxel Kernel (Dynamic Resolution: {voxelSizeMM}mm)...");
                 Library lib = new Library(voxelSizeMM);
                 Library.RegisterGlobalLibrary(lib);
                 Console.WriteLine("[CEM ENGINE] Voxel Kernel active.");
@@ -99,6 +140,41 @@ namespace VeloLabs.CEM
                 Console.Error.WriteLine("========================================");
                 return 1;
             }
+        }
+
+        static double GetMaxCsgExtent(CSGNode node)
+        {
+            if (node == null) return 0.0;
+            double maxExt = 0.0;
+            
+            // Check position translation bounds
+            if (node.Position != null && node.Position.Length >= 3)
+            {
+                maxExt = Math.Max(maxExt, Math.Abs(node.Position[0]) * 2.0);
+                maxExt = Math.Max(maxExt, Math.Abs(node.Position[1]) * 2.0);
+                maxExt = Math.Max(maxExt, Math.Abs(node.Position[2]) * 2.0);
+            }
+
+            // Check dimensions of node
+            if (node.Dimensions != null)
+            {
+                foreach (var pair in node.Dimensions)
+                {
+                    maxExt = Math.Max(maxExt, pair.Value);
+                }
+            }
+
+            // Check children
+            if (node.Left != null)
+            {
+                maxExt = Math.Max(maxExt, GetMaxCsgExtent(node.Left));
+            }
+            if (node.Right != null)
+            {
+                maxExt = Math.Max(maxExt, GetMaxCsgExtent(node.Right));
+            }
+            
+            return maxExt;
         }
     }
 
