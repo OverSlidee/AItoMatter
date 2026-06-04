@@ -288,10 +288,34 @@ export default function Dashboard() {
     return key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
   };
 
+  const getCaseInsensitiveValue = (obj: any, searchKey: string) => {
+    if (!obj) return undefined;
+    const lowerKey = searchKey.toLowerCase();
+    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === lowerKey);
+    return foundKey ? obj[foundKey] : undefined;
+  };
+
+  const formatValue = (key: string, val: number) => {
+    const k = key.toLowerCase();
+    if (k === "toothcount") {
+      return `${Math.round(val)}`;
+    }
+    if (k === "module") {
+      return `${Number(val).toFixed(2)}`;
+    }
+    if (k === "pressurepsi") {
+      return `${Number(val).toFixed(1)} PSI`;
+    }
+    if (k === "loadnewtons") {
+      return `${Number(val).toFixed(0)} N`;
+    }
+    return `${Number(val).toFixed(2)}mm`;
+  };
+
   // Check if a dimension was modified by physics or tolerances
-  const isDimensionModified = (key: string, origVal: number, finalVal: number) => {
+  const isDimensionModified = (key: string, origVal: number | undefined, finalVal: number | undefined) => {
     if (origVal === undefined || finalVal === undefined) return false;
-    return Math.abs(origVal - finalVal) > 0.001;
+    return Math.abs(Number(origVal) - Number(finalVal)) > 0.001;
   };
 
   return (
@@ -664,10 +688,16 @@ export default function Dashboard() {
                     {(() => {
                       const orig = JSON.parse(selectedJob.originalDimensions || "{}");
                       const final = JSON.parse(selectedJob.finalDimensions || "{}");
-                      const keys = Object.keys(final);
+                      
+                      // Filter keys to exclude irrelevant properties that are 0 in both original and final schemas
+                      const keys = Object.keys(final).filter((key) => {
+                        const oVal = getCaseInsensitiveValue(orig, key);
+                        const fVal = final[key];
+                        return (oVal !== undefined && Number(oVal) > 0) || (fVal !== undefined && Number(fVal) > 0);
+                      });
 
                       return keys.map((key) => {
-                        const oVal = orig[key];
+                        const oVal = getCaseInsensitiveValue(orig, key);
                         const fVal = final[key];
                         const modified = isDimensionModified(key, oVal, fVal);
 
@@ -680,19 +710,19 @@ export default function Dashboard() {
                                 : "bg-slate-900/40 border-slate-800/80"
                             }`}
                           >
-                            <span className="block text-[10px] font-mono text-slate-500 uppercase tracking-wide">
+                            <span className="block text-[10px] font-mono text-slate-400 uppercase tracking-wide">
                               {formatKeyName(key)}
                             </span>
                             
                             <div className="flex items-baseline space-x-2 mt-1">
-                              <span className="text-lg font-bold font-mono">
-                                {Number(fVal).toFixed(2)}mm
+                              <span className="text-lg font-bold font-mono text-slate-100">
+                                {formatValue(key, Number(fVal))}
                               </span>
 
-                              {modified && (
+                              {modified && oVal !== undefined && (
                                 <>
                                   <span className="text-xs text-slate-500 line-through">
-                                    {Number(oVal).toFixed(2)}mm
+                                    {formatValue(key, Number(oVal))}
                                   </span>
                                   <span className="text-[10px] font-mono bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded font-semibold flex items-center space-x-0.5">
                                     <AlertTriangle className="h-3 w-3 inline" />
@@ -711,7 +741,10 @@ export default function Dashboard() {
                   {(() => {
                     const orig = JSON.parse(selectedJob.originalDimensions || "{}");
                     const final = JSON.parse(selectedJob.finalDimensions || "{}");
-                    const overridesApplied = Object.keys(final).some(k => isDimensionModified(k, orig[k], final[k]));
+                    const overridesApplied = Object.keys(final).some((k) => {
+                      const oVal = getCaseInsensitiveValue(orig, k);
+                      return isDimensionModified(k, oVal, final[k]);
+                    });
                     
                     if (overridesApplied) {
                       return (
