@@ -15,7 +15,8 @@ import {
   Database,
   ArrowRight,
   Sparkles,
-  Layers
+  Layers,
+  Trash2
 } from "lucide-react";
 import ThreeDViewer from "../components/ThreeDViewer";
 
@@ -144,11 +145,35 @@ export default function Dashboard() {
           const updated = data.jobs.find((j: Job) => j.jobId === selectedJob.jobId);
           if (updated) {
             setSelectedJob(updated);
+          } else {
+            setSelectedJob(null);
+            setIsCreating(true);
           }
         }
       }
     } catch (err) {
       console.error("Error fetching jobs:", err);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    if (!confirm("Are you sure you want to delete this job run? This will recursively delete all child iterations and permanently remove files from the VPS.")) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/jobs/${jobId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchJobs();
+      } else {
+        alert(`Failed to delete job: ${data.error}`);
+      }
+    } catch (err: any) {
+      console.error("Delete job error:", err);
+      alert(`Failed to delete job: ${err.message}`);
     }
   };
 
@@ -357,13 +382,13 @@ export default function Dashboard() {
             </div>
           ) : (
             jobs.map((job) => (
-              <button
+              <div
                 key={job.jobId}
                 onClick={() => {
                   setSelectedJob(job);
                   setIsCreating(false);
                 }}
-                className={`w-full text-left p-3 rounded-lg border transition-all cursor-pointer ${
+                className={`group w-full text-left p-3 rounded-lg border transition-all cursor-pointer relative ${
                   selectedJob?.jobId === job.jobId
                     ? "bg-slate-800/40 border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.05)]"
                     : "bg-transparent border-transparent hover:bg-slate-900/30 hover:border-slate-800/60"
@@ -373,9 +398,21 @@ export default function Dashboard() {
                   <span className="font-mono text-[10px] text-slate-500 truncate max-w-[120px]">
                     {job.jobId}
                   </span>
-                  <span className={`text-[9px] px-2 py-0.5 rounded border uppercase font-mono ${getStatusColor(job.status)}`}>
-                    {job.status}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-[9px] px-2 py-0.5 rounded border uppercase font-mono ${getStatusColor(job.status)}`}>
+                      {job.status}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteJob(job.jobId);
+                      }}
+                      className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-all cursor-pointer"
+                      title="Delete Run"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-300 font-semibold line-clamp-2 leading-relaxed">
                   {job.prompt}
@@ -388,7 +425,7 @@ export default function Dashboard() {
                     <span>{job.material}</span>
                   </div>
                 )}
-              </button>
+              </div>
             ))
           )}
         </div>

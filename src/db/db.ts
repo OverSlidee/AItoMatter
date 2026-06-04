@@ -152,3 +152,42 @@ export function getNextPendingJob(): Promise<Job | null> {
     });
   });
 }
+
+/**
+ * Recursively deletes a job and all its child design iteration jobs,
+ * returning the list of all deleted job IDs for file cleanup.
+ */
+export function deleteJobAndDescendants(jobId: string): Promise<string[]> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const deletedIds: string[] = [];
+      
+      const getDescendants = async (id: string) => {
+        deletedIds.push(id);
+        const children = await new Promise<any[]>((res, rej) => {
+          db.all("SELECT jobId FROM jobs WHERE parentId = ?", [id], (err, rows) => {
+            if (err) rej(err);
+            else res(rows || []);
+          });
+        });
+        for (const child of children) {
+          await getDescendants(child.jobId);
+        }
+      };
+
+      await getDescendants(jobId);
+
+      const placeholders = deletedIds.map(() => "?").join(",");
+      await new Promise<void>((res, rej) => {
+        db.run(`DELETE FROM jobs WHERE jobId IN (${placeholders})`, deletedIds, (err) => {
+          if (err) rej(err);
+          else res();
+        });
+      });
+
+      resolve(deletedIds);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
