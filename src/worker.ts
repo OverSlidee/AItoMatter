@@ -120,7 +120,15 @@ async function processJob(job: Job) {
 
     // Run C# compiler
     await new Promise<void>((resolve, reject) => {
-      const child = spawn(cemExe, [schemaPath, output3mfPath]);
+      const isWindows = process.platform === "win32";
+      const customEnv = {
+        ...process.env,
+        DOTNET_ROOT: process.env.DOTNET_ROOT || (isWindows ? process.env.DOTNET_ROOT : "/home/username/.dotnet"),
+        PATH: process.env.PATH
+          ? (isWindows ? process.env.PATH : `/home/username/.dotnet:${process.env.PATH}`)
+          : (isWindows ? "" : "/home/username/.dotnet:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+      };
+      const child = spawn(cemExe, [schemaPath, output3mfPath], { env: customEnv });
 
       child.stdout.on("data", (data) => {
         const lines = data.toString().split("\n");
