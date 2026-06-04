@@ -115,8 +115,8 @@ GUIDELINES FOR POPULAR CUSTOM GEOMETRIES:
 If you receive "ITERATION CONTEXT", you are performing an evolutionary update to a previous design:
 - Look at the previous schema's 'componentType', 'material', 'manufacturingMethod', 'dimensions', and 'geometryTree'.
 - Maintain the same material and manufacturing method unless asked to change them.
-- To add elements, create a 'union' node with the existing 'geometryTree' on one side (e.g. 'left') and the new shape primitive on the other side ('right'), with appropriate relative positioning offsets.
-- To subtract/drill elements, create a 'difference' node with the existing 'geometryTree' on the 'left' and the subtraction primitive on the 'right'.
+- To add/subtract/modify elements, you must reference the previous design's geometry tree.
+- CRITICAL SIMPLIFICATION FOR DEEP TREES: To reference the previous geometry tree in your new 'geometryTree' structure (e.g., inside 'left' or 'right' of a union/difference/intersection), DO NOT write out or copy the entire parent geometry tree. Instead, simply use the string value "__PARENT_GEOMETRY__" (for example: "left": "__PARENT_GEOMETRY__"). The system will automatically substitute the parent tree. This prevents syntax and bracket count errors!
 - To modify dimensions of existing primitives, locate them in the 'geometryTree' or under 'dimensions' and update their values in the new finalized schema.
 - Preserve the previous structure where possible.
 
@@ -251,6 +251,11 @@ CRITICAL: Output ONLY valid raw JSON. Do not write text before or after the JSON
       const schemaData = parsedOutput.schema;
       schemaData.jobId = jobId;
 
+      // Replace parent geometry placeholder if iterating
+      if (parentSchema && parentSchema.geometryTree && schemaData.geometryTree) {
+        schemaData.geometryTree = replaceParentPlaceholder(schemaData.geometryTree, parentSchema.geometryTree);
+      }
+
       log(`[AGENT] Agent finalized dimensions. Running Zod validation...`);
       const validationResult = ExtractedDimensionsSchema.safeParse(schemaData);
 
@@ -281,4 +286,24 @@ CRITICAL: Output ONLY valid raw JSON. Do not write text before or after the JSON
   }
 
   throw new Error(`Agent failed to stabilize schema within ${maxAttempts} turns.`);
+}
+
+function replaceParentPlaceholder(node: any, parentTree: any): any {
+  if (!node) return node;
+  if (
+    node === "__PARENT_GEOMETRY__" || 
+    (typeof node === "string" && node.includes("PARENT_GEOMETRY")) ||
+    (typeof node === "object" && (node.type === "__PARENT_GEOMETRY__" || (typeof node.type === "string" && node.type.includes("PARENT_GEOMETRY"))))
+  ) {
+    return JSON.parse(JSON.stringify(parentTree));
+  }
+  if (typeof node === "object") {
+    if (node.left) {
+      node.left = replaceParentPlaceholder(node.left, parentTree);
+    }
+    if (node.right) {
+      node.right = replaceParentPlaceholder(node.right, parentTree);
+    }
+  }
+  return node;
 }
