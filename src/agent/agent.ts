@@ -2,7 +2,7 @@ import { searchDuckDuckGo } from "./ddgSearch";
 import { ExtractedDimensionsSchema, ExtractedDimensions } from "./schema";
 
 const PRIMARY_MODEL = "deepseek-v4-pro:cloud";
-const FALLBACK_MODEL = "qwen3.5:4b";
+const FALLBACK_MODEL = "deepseek-v4-pro:cloud";
 
 interface AgentMessage {
   role: "system" | "user" | "assistant";
@@ -186,33 +186,43 @@ CRITICAL: Output ONLY valid raw JSON. Do not write text before or after the JSON
     log(`[AGENT] Turn ${attempts}/${maxAttempts}`);
 
     let responseText = "";
-    try {
-      const res = await fetch("http://127.0.0.1:11434/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: activeModel,
-          messages: messages,
-          options: { temperature: 0.1 },
-          stream: false
-        })
-      });
+    const retries = 5;
+    const delayMs = 5000;
+    let lastError: any = null;
 
-      if (!res.ok) {
-        throw new Error(`Ollama chat returned status ${res.status}`);
-      }
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fetch("http://127.0.0.1:11434/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: activeModel,
+            messages: messages,
+            options: { temperature: 0.1 },
+            stream: false
+          })
+        });
 
-      const body = await res.json();
-      responseText = body.message?.content || "";
-    } catch (err: any) {
-      log(`[AGENT] Error communicating with Ollama: ${err.message}`);
-      if (activeModel === PRIMARY_MODEL) {
-        log(`[AGENT] Retrying with fallback model "${FALLBACK_MODEL}"`);
-        activeModel = FALLBACK_MODEL;
-        attempts--;
-        continue;
+        if (!res.ok) {
+          throw new Error(`Ollama chat returned status ${res.status}`);
+        }
+
+        const body = await res.json();
+        responseText = body.message?.content || "";
+        lastError = null;
+        break; // Success, break out of retry loop
+      } catch (err: any) {
+        lastError = err;
+        log(`[AGENT] Error communicating with Ollama (attempt ${i + 1}/${retries}): ${err.message}`);
+        if (i < retries - 1) {
+          log(`[AGENT] Waiting ${delayMs / 1000}s before retrying...`);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
       }
-      throw err;
+    }
+
+    if (lastError) {
+      throw lastError;
     }
 
     let cleanText = responseText.trim();
