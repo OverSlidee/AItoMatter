@@ -282,10 +282,16 @@ export default function LandingPage() {
         </div>
 
         {/* Right: Rotating Three.js Viewport */}
-        <div className="lg:col-span-5 h-[360px] md:h-[450px] glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-slate-800/80 animate-fade-in-up animation-delay-100">
+        <div className="lg:col-span-5 h-[360px] md:h-[450px] glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-slate-800/80 animate-fade-in-up animation-delay-100 cyber-scanline">
+          {/* HUD decorative corners */}
+          <div className="hud-corner hud-tl" />
+          <div className="hud-corner hud-tr" />
+          <div className="hud-corner hud-bl" />
+          <div className="hud-corner hud-br" />
+          
           <div ref={threeRef} className="w-full h-full" />
           <div className="absolute top-4 left-4 bg-slate-950/90 border border-slate-850 px-3.5 py-1.5 rounded-lg text-[10px] font-mono text-cyan-400 flex items-center space-x-2 shadow-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-450 animate-ping" />
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping" />
             <span>REAL-TIME CSG PREVIEW</span>
           </div>
           
@@ -454,7 +460,13 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-5 bg-[#030611] rounded-2xl border border-slate-900 p-6 flex flex-col justify-between space-y-6">
+          <div className="lg:col-span-5 bg-[#030611] rounded-2xl border border-slate-900 p-6 flex flex-col justify-between space-y-6 relative overflow-hidden cyber-scanline">
+            {/* HUD decorative corners */}
+            <div className="hud-corner hud-tl" />
+            <div className="hud-corner hud-tr" />
+            <div className="hud-corner hud-bl" />
+            <div className="hud-corner hud-br" />
+            
             <div className="flex justify-between items-center text-[9px] font-mono text-slate-500 border-b border-slate-900 pb-3">
               <span>PARAMETER MATRIX</span>
               <span>CEM-01</span>

@@ -195,3 +195,61 @@ body {
   border-color: rgba(6, 182, 212, 0.3);
   box-shadow: 0 20px 40px -15px rgba(6, 182, 212, 0.15);
 }
+
+/* Cybernetic scanline overlay animation */
+.cyber-scanline {
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-scanline::after {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(6, 182, 212, 0.03) 50%,
+    rgba(6, 182, 212, 0.08) 95%,
+    rgba(6, 182, 212, 0.15) 100%
+  );
+  pointer-events: none;
+  animation: scan 8s linear infinite;
+  z-index: 1;
+}
+
+@keyframes scan {
+  0% {
+    top: -50%;
+  }
+  100% {
+    top: 150%;
+  }
+}
+
+/* Cyberpunk neon text glow */
+.text-neon-glow {
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+.text-purple-glow {
+  text-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+
+/* Technical HUD decorative crosshairs */
+.hud-corner {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: rgba(6, 182, 212, 0.5);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.hud-tl { top: 6px; left: 6px; border-width: 1px 0 0 1px; }
+.hud-tr { top: 6px; right: 6px; border-width: 1px 1px 0 0; }
+.hud-bl { bottom: 6px; left: 6px; border-width: 0 0 1px 1px; }
+.hud-br { bottom: 6px; right: 6px; border-width: 0 1px 1px 0; }

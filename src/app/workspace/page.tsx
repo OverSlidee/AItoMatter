@@ -723,7 +723,13 @@ export default function Workspace() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 
                 {/* Left Side: Real-time Terminal Log Console */}
-                <div className="glass-panel rounded-2xl overflow-hidden border border-slate-800/80 flex flex-col h-[420px] shadow-2xl">
+                <div className="glass-panel rounded-2xl overflow-hidden border border-slate-800/80 flex flex-col h-[420px] shadow-2xl relative">
+                  {/* HUD decorative corners */}
+                  <div className="hud-corner hud-tl" />
+                  <div className="hud-corner hud-tr" />
+                  <div className="hud-corner hud-bl" />
+                  <div className="hud-corner hud-br" />
+                  
                   <div className="bg-slate-950/80 border-b border-slate-900 px-4 py-3 flex items-center justify-between shrink-0">
                     <div className="flex items-center space-x-2">
                       <TerminalIcon className="h-4 w-4 text-cyan-400" />
@@ -764,7 +770,13 @@ export default function Workspace() {
                 </div>
 
                 {/* Right Side: Interactive 3D Model Canvas Viewer */}
-                <div className="glass-panel rounded-2xl overflow-hidden h-[420px] shadow-2xl relative">
+                <div className="glass-panel rounded-2xl overflow-hidden h-[420px] shadow-2xl relative cyber-scanline">
+                  {/* HUD decorative corners */}
+                  <div className="hud-corner hud-tl" />
+                  <div className="hud-corner hud-tr" />
+                  <div className="hud-corner hud-bl" />
+                  <div className="hud-corner hud-br" />
+                  
                   {selectedJob.status === "completed" && selectedJob.finalDimensions ? (
                     <ThreeDViewer
                       componentType={selectedJob.componentType!}
