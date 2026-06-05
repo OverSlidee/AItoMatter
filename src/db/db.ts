@@ -36,6 +36,17 @@ db.serialize(() => {
   db.run("ALTER TABLE jobs ADD COLUMN parentId TEXT", (err) => {
     // Ignore error if column already exists
   });
+
+  // Users table for authentication
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      passwordHash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      createdAt TEXT NOT NULL
+    )
+  `);
 });
 
 export interface Job {
@@ -189,5 +200,39 @@ export function deleteJobAndDescendants(jobId: string): Promise<string[]> {
     } catch (err) {
       reject(err);
     }
+  });
+}
+
+// --- Authentication ---
+
+export interface User {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  createdAt: string;
+}
+
+export function createUser(id: string, email: string, passwordHash: string, name: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const now = new Date().toISOString();
+    const query = `
+      INSERT INTO users (id, email, passwordHash, name, createdAt)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    db.run(query, [id, email, passwordHash, name, now], (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+export function getUserByEmail(email: string): Promise<User | null> {
+  return new Promise((resolve, reject) => {
+    const query = `SELECT * FROM users WHERE email = ?`;
+    db.get(query, [email], (err, row) => {
+      if (err) reject(err);
+      else resolve((row as User) || null);
+    });
   });
 }

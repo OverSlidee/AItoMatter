@@ -14,7 +14,10 @@ import {
   Sliders,
   Download,
   Terminal,
-  Check
+  Check,
+  Crown,
+  Zap,
+  Shield
 } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "framer-motion";
 
@@ -69,14 +72,90 @@ function DotIndicator({ item, smoothScroll, onClick }: { item: any, smoothScroll
 
 export default function LandingPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const aetherRef = useRef<HTMLDivElement>(null);
   
   // Cinematic loading preloader states
   const [loading, setLoading] = useState(true);
   const [loadPct, setLoadPct] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
 
+  // Scroll locking states to hold the page for 2s at Aether text
+  const [scrollLocked, setScrollLocked] = useState(false);
+  const lockPositionRef = useRef<number>(0);
+  const hasLockedRef = useRef(false);
+
   // Framer Motion Scroll Progress Indicator
   const { scrollYProgress } = useScroll();
+
+  // Scroll Lock Trigger via IntersectionObserver on the AETHER element
+  useEffect(() => {
+    if (loading) return;
+    const aetherEl = aetherRef.current;
+    if (!aetherEl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !hasLockedRef.current) {
+          hasLockedRef.current = true;
+          lockPositionRef.current = window.scrollY;
+          setScrollLocked(true);
+
+          setTimeout(() => {
+            setScrollLocked(false);
+          }, 2000); // Lock for 2 seconds
+        }
+      },
+      { threshold: 0.5 } // Trigger when 50% of AETHER is visible
+    );
+
+    observer.observe(aetherEl);
+
+    // Reset the lock when scrolling back to top
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      if (latest < 0.1) {
+        hasLockedRef.current = false;
+      }
+    });
+
+    return () => {
+      observer.disconnect();
+      unsubscribe();
+    };
+  }, [scrollYProgress, loading]);
+
+  // Scroll Lock Event Interceptor Effect
+  useEffect(() => {
+    if (!scrollLocked) return;
+
+    const preventScroll = (e: Event) => {
+      e.preventDefault();
+    };
+
+    const preventKeys = (e: KeyboardEvent) => {
+      const keys = ["ArrowUp", "ArrowDown", "Space", "PageUp", "PageDown", "Home", "End"];
+      if (keys.includes(e.code) || e.key === " ") {
+        e.preventDefault();
+      }
+    };
+
+    const forceScroll = () => {
+      window.scrollTo(0, lockPositionRef.current);
+    };
+
+    // Block mouse wheel, touch moves, layout key scrolling, and lock scroll viewport coordinates
+    window.addEventListener("wheel", preventScroll, { passive: false });
+    window.addEventListener("touchmove", preventScroll, { passive: false });
+    window.addEventListener("keydown", preventKeys, { passive: false });
+    window.addEventListener("scroll", forceScroll);
+
+    return () => {
+      window.removeEventListener("wheel", preventScroll);
+      window.removeEventListener("touchmove", preventScroll);
+      window.removeEventListener("keydown", preventKeys);
+      window.removeEventListener("scroll", forceScroll);
+    };
+  }, [scrollLocked]);
   
   // Custom spring physics to mimic the deceleration and inertia of oryzo.ai
   const smoothScroll = useSpring(scrollYProgress, {
@@ -363,6 +442,7 @@ export default function LandingPage() {
 
           {/* Beat Aether: Aether Core Reveal */}
           <motion.div 
+            ref={aetherRef}
             style={{ opacity: opacityAether, y: yAether, filter: blurAether, pointerEvents: pointerAether }} 
             className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
           >
@@ -379,7 +459,7 @@ export default function LandingPage() {
             
             <div className="space-y-4 pt-3 md:pt-4 pointer-events-auto w-full flex flex-col items-center">
               <Link
-                href="/workspace"
+                href="/login"
                 className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-[10px] md:text-xs py-3.5 md:py-4 px-6 md:px-10 rounded shadow-md transition-all flex items-center justify-center space-x-3 cursor-pointer"
               >
                 <span>LAUNCH COMPILER WORKSPACE</span>
@@ -628,17 +708,128 @@ export default function LandingPage() {
 
           </div>
 
+          {/* PRICING SECTION */}
+          <div className="mt-32 mb-8">
+            <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
+              <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[10px] font-mono shadow-sm">
+                <Crown className="h-3.5 w-3.5 text-amber-500" />
+                <span>PRICING</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white uppercase">
+                Choose Your Plan
+              </h2>
+              <p className="text-sm text-zinc-400 font-mono tracking-wider uppercase">
+                From prototype to production — scale your engineering pipeline.
+              </p>
+            </div>
+
+            {/* Pricing Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+              
+              {/* Free Tier */}
+              <div className="glass-panel p-8 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+                <div className="mb-6">
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800 text-zinc-400 w-fit mb-4">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-bold text-zinc-100 mb-1">Free</h3>
+                  <p className="text-[10px] font-mono text-zinc-500 tracking-wider uppercase">For exploration & prototyping</p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-black text-white">$0</span>
+                  <span className="text-sm text-zinc-500 font-mono">/mo</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {["5 compiles per day", "STL export format", "Basic materials (PLA)", "Community support", "Wireframe viewer"].map((f, i) => (
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-zinc-400">
+                      <Check className="h-3.5 w-3.5 text-zinc-600 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/signup"
+                  className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono font-bold text-[10px] py-3 rounded text-center transition-all block"
+                >
+                  GET STARTED FREE
+                </Link>
+              </div>
+
+              {/* Pro Tier — Highlighted */}
+              <div className="glass-panel pricing-recommended p-8 rounded-xl border border-amber-500/30 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+                {/* Recommended Badge */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-zinc-950 text-[8px] font-mono font-bold tracking-[0.2em] px-4 py-1 rounded-full pricing-badge-glow uppercase">
+                  RECOMMENDED
+                </div>
+                <div className="mb-6 mt-2">
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 w-fit mb-4">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-bold text-zinc-100 mb-1">Pro</h3>
+                  <p className="text-[10px] font-mono text-zinc-500 tracking-wider uppercase">For engineers & makers</p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-black text-amber-500">$29</span>
+                  <span className="text-sm text-zinc-500 font-mono">/mo</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {["Unlimited compiles", "3MF + STL export", "All materials (FDM, SLA, SLM)", "Priority compile queue", "Full version history", "Interactive 3D viewer", "Email support"].map((f, i) => (
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-zinc-300">
+                      <Check className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/signup"
+                  className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-[10px] py-3 rounded text-center transition-all shadow-md block"
+                >
+                  START PRO PLAN
+                </Link>
+              </div>
+
+              {/* Enterprise Tier */}
+              <div className="glass-panel p-8 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+                <div className="mb-6">
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800 text-zinc-400 w-fit mb-4">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-bold text-zinc-100 mb-1">Enterprise</h3>
+                  <p className="text-[10px] font-mono text-zinc-500 tracking-wider uppercase">For teams & organizations</p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-black text-white">Custom</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {["Everything in Pro", "REST API access", "Team workspaces", "Dedicated compile agent", "Custom material profiles", "SLA support guarantee", "SSO & audit logs"].map((f, i) => (
+                    <li key={i} className="flex items-center space-x-2.5 text-xs text-zinc-400">
+                      <Check className="h-3.5 w-3.5 text-zinc-600 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/signup"
+                  className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono font-bold text-[10px] py-3 rounded text-center transition-all block"
+                >
+                  CONTACT SALES
+                </Link>
+              </div>
+
+            </div>
+          </div>
+
           {/* CTA Footer */}
           <div className="mt-20 text-center space-y-4">
             <Link
-              href="/workspace"
+              href="/login"
               className="inline-flex bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-4 px-10 rounded shadow-md transition-all items-center space-x-3 cursor-pointer"
             >
               <span>LAUNCH LIVE WORKSPACE NOW</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
             <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
-              No registration or setup needed to run initial compiles.
+              Sign up for free to start compiling.
             </div>
           </div>
 

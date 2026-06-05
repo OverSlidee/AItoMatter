@@ -25,9 +25,11 @@ import {
   Sliders,
   Check,
   Gauge,
-  Activity
+  Activity,
+  LogOut
 } from "lucide-react";
 import ThreeDViewer from "../../components/ThreeDViewer";
+import { logout } from "../actions/auth";
 
 interface Job {
   jobId: string;
@@ -431,6 +433,15 @@ export default function Workspace() {
               >
                 <Plus className="h-4 w-4" />
               </button>
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80 hover:bg-zinc-800/80 hover:border-zinc-600/80 text-zinc-500 hover:text-amber-500 transition-all cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </form>
             </div>
           </div>
 

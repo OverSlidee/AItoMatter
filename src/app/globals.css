@@ -207,6 +207,30 @@ body {
 .hud-bl { bottom: 6px; left: 6px; border-width: 0 0 1px 1px; }
 .hud-br { bottom: 6px; right: 6px; border-width: 0 1px 1px 0; }
 
+/* Recommended pricing card highlight */
+.pricing-recommended {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.08), 0 0 60px rgba(245, 158, 11, 0.04), inset 0 1px 0 rgba(245, 158, 11, 0.1);
+}
+
+.pricing-recommended:hover {
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.12), 0 0 80px rgba(245, 158, 11, 0.06), inset 0 1px 0 rgba(245, 158, 11, 0.15);
+}
+
+.pricing-recommended::before {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(194, 65, 12, 0.1)) !important;
+}
+
+.pricing-badge-glow {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.5); }
+}
+
 /* Cinematic noise overlay for high-end organic grain */
 .noise-overlay {
   position: fixed;
