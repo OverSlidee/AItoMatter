@@ -377,21 +377,6 @@ export default function LandingPage() {
               AI to Matter CEM engine
             </p>
             
-            <div className="grid grid-cols-3 gap-3 md:gap-4 font-mono text-[8px] md:text-[9px] w-full max-w-sm md:max-w-md pt-2 md:pt-4 pointer-events-auto">
-              <div className="glass-panel p-2.5 md:p-3 rounded border border-zinc-850 bg-zinc-900/40 backdrop-blur-md">
-                <span className="text-zinc-400 block mb-1 uppercase">Solves Speed</span>
-                <span className="text-xs md:text-sm font-bold text-amber-550">0.08 s</span>
-              </div>
-              <div className="glass-panel p-2.5 md:p-3 rounded border border-zinc-850 bg-zinc-900/40 backdrop-blur-md">
-                <span className="text-zinc-400 block mb-1 uppercase">Training Corpus</span>
-                <span className="text-xs md:text-sm font-bold text-zinc-300">2.8M CAD</span>
-              </div>
-              <div className="glass-panel p-2.5 md:p-3 rounded border border-zinc-850 bg-zinc-900/40 backdrop-blur-md">
-                <span className="text-zinc-400 block mb-1 uppercase">Manifold</span>
-                <span className="text-xs md:text-sm font-bold text-emerald-500">100% Solid</span>
-              </div>
-            </div>
-
             <div className="space-y-4 pt-3 md:pt-4 pointer-events-auto w-full flex flex-col items-center">
               <Link
                 href="/workspace"
