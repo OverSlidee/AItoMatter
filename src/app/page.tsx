@@ -306,42 +306,6 @@ export default function LandingPage() {
         style={{ y: gridY, opacity: gridOpacity, perspective: 1000, rotateX: 45 }}
         className="dot-grid fixed inset-0 pointer-events-none z-10 origin-center" 
       />
-      
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-xl z-50 transition-all">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 group-hover:border-amber-550 transition-all shadow-md">
-              <Layers className="h-5 w-5 text-amber-500" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-mono font-extrabold tracking-widest text-zinc-200 transition-all text-sm leading-none">
-                VELOLABS
-              </span>
-              <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mt-1">Autonomous CAD Engine</span>
-            </div>
-          </Link>
-          
-          <nav className="hidden md:flex items-center space-x-8 text-[10px] font-mono tracking-widest text-zinc-400">
-            <HeaderButton label="Intro" start={0.0} end={0.12} smoothScroll={smoothScroll} onClick={() => scrollToSection(0.0)} />
-            <HeaderButton label="Aether" start={0.12} end={0.32} smoothScroll={smoothScroll} onClick={() => scrollToSection(0.22)} />
-            <HeaderButton label="01 / Ingest" start={0.32} end={0.50} smoothScroll={smoothScroll} onClick={() => scrollToSection(0.41)} />
-            <HeaderButton label="02 / Audit" start={0.50} end={0.68} smoothScroll={smoothScroll} onClick={() => scrollToSection(0.59)} />
-            <HeaderButton label="03 / Solver" start={0.68} end={0.84} smoothScroll={smoothScroll} onClick={() => scrollToSection(0.77)} />
-            <HeaderButton label="04 / Workspace" start={0.84} end={1.0} smoothScroll={smoothScroll} onClick={() => scrollToSection(0.95)} />
-          </nav>
-          
-          <div>
-            <Link
-              href="/workspace"
-              className="px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-amber-550 text-amber-500 hover:text-amber-400 text-xs font-bold font-mono tracking-wider transition-all flex items-center space-x-2 cursor-pointer shadow-sm"
-            >
-              <span>LAUNCH WORKSPACE</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
 
       {/* FULL-SCREEN FIXED VIDEO CONTAINER */}
       <div className="fixed inset-0 w-screen h-screen z-0 pointer-events-none flex items-center justify-center overflow-hidden bg-[#09090b]">
