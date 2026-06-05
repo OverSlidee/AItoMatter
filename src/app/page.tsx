@@ -375,11 +375,11 @@ export default function LandingPage() {
             </div>
             <h1 
               style={metallicShadow}
-              className="text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+              className="text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
             >
               INTRODUCED BY VELOLABS
             </h1>
-            <p className="text-zinc-400 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-lg">
+            <p className="text-zinc-100 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-lg">
               SCROLL TO DECONSTRUCT THE CORE &amp; EXPLORE PLATFORM CAPABILITIES.
             </p>
           </motion.div>
@@ -392,11 +392,11 @@ export default function LandingPage() {
             <div className="text-zinc-555 font-mono text-[9px] tracking-[0.3em] uppercase">SYSTEM / ARCHITECTURE</div>
             <h2 
               style={metallicShadow}
-              className="text-4xl md:text-7xl font-black tracking-[0.25em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+              className="text-4xl md:text-7xl font-black tracking-[0.25em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
             >
               AETHER
             </h2>
-            <p className="text-zinc-350 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
               OUR CUSTOM COMPUTATIONAL ENGINEERING ENGINE. TRANSLATING RAW ARTIFICIAL INTELLIGENCE DIRECTLY INTO WATERTIGHT PHYSICAL MATTER.
             </p>
           </motion.div>
@@ -412,11 +412,11 @@ export default function LandingPage() {
             </div>
             <h2 
               style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
             >
               INGEST DATASHEETS
             </h2>
-            <p className="text-zinc-350 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
               UPLOAD MANUFACTURER PDF SPECIFICATIONS OR TYPE SIMPLE MECHANICAL REQUIREMENTS. AETHER INSTANTLY PARSES PRECISION BOUNDARIES AND FORCE LOADS.
             </p>
           </motion.div>
@@ -432,11 +432,11 @@ export default function LandingPage() {
             </div>
             <h2 
               style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
             >
               PHYSICS AUDITS
             </h2>
-            <p className="text-zinc-350 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
               EVALUATES MECHANICAL STRAIN UNDER TORQUE LOAD. THE MODEL AUTOMATICALLY REINFORCES STRUCTURES AND THICKENS CASES TO ENFORCE OVERRIDE LIMITS.
             </p>
           </motion.div>
@@ -452,11 +452,11 @@ export default function LandingPage() {
             </div>
             <h2 
               style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
             >
               KINEMATIC SOLVER
             </h2>
-            <p className="text-zinc-350 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
               VERIFIES ROTATIONAL CLEARANCES AND CLOSED-LOOP TRANSMISSION LINKAGES. ENSURES ALL MOVING JOINTS SWING FREELY WITHOUT COLLISION.
             </p>
           </motion.div>
@@ -472,22 +472,22 @@ export default function LandingPage() {
             </div>
             <h2 
               style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
             >
               04 / WORKSPACE
             </h2>
             
             <div className="grid grid-cols-3 gap-4 font-mono text-[9px] w-full max-w-md">
               <div className="glass-panel p-3 rounded border border-zinc-850 bg-zinc-900/40 backdrop-blur-md">
-                <span className="text-zinc-500 block mb-1 uppercase">Solves Speed</span>
-                <span className="text-sm font-bold text-amber-500">0.08 s</span>
+                <span className="text-zinc-400 block mb-1 uppercase">Solves Speed</span>
+                <span className="text-sm font-bold text-amber-550">0.08 s</span>
               </div>
               <div className="glass-panel p-3 rounded border border-zinc-850 bg-zinc-900/40 backdrop-blur-md">
-                <span className="text-zinc-500 block mb-1 uppercase">Training Corpus</span>
+                <span className="text-zinc-400 block mb-1 uppercase">Training Corpus</span>
                 <span className="text-sm font-bold text-zinc-300">2.8M CAD</span>
               </div>
               <div className="glass-panel p-3 rounded border border-zinc-850 bg-zinc-900/40 backdrop-blur-md">
-                <span className="text-zinc-500 block mb-1 uppercase">Manifold</span>
+                <span className="text-zinc-400 block mb-1 uppercase">Manifold</span>
                 <span className="text-sm font-bold text-emerald-500">100% Solid</span>
               </div>
             </div>
@@ -500,7 +500,7 @@ export default function LandingPage() {
                 <span>LAUNCH COMPILER WORKSPACE</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
+              <div className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">
                 &copy; {new Date().getFullYear()} VeloLabs. AI TO MATTER COMPILER PIPELINE.
               </div>
             </div>
