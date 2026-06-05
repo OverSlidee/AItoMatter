@@ -25,15 +25,30 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<"gear" | "bracket" | "pipe" | "housing" >("gear");
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
   
-  // Track scroll position for Three.js parallax
-  const scrollYRef = useRef(0);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const targetScrollFraction = useRef(0);
+  const currentScrollFraction = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      scrollYRef.current = window.scrollY;
+      if (!gridContainerRef.current) return;
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      const containerHeight = rect.height;
+      const scrolledDistance = -rect.top;
+      const scrollRange = Math.max(containerHeight - window.innerHeight, 1);
+      
+      let fraction = scrolledDistance / scrollRange;
+      fraction = Math.max(0, Math.min(fraction, 1));
+      targetScrollFraction.current = fraction;
     };
+    
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, []);
 
   // Framer Motion Scroll Progress Indicator
@@ -69,6 +84,24 @@ export default function LandingPage() {
       desc: "Generate custom mounts and motor faceplates aligning with standard NEMA dimensions and tolerances.",
       prompt: "Design a NEMA 17 motor housing plate. Bolt spacing 31mm, pilot diameter 22mm, pilot depth 2mm, main body thickness 8mm with a 5mm central shaft clearance bore.",
       spec: "NEMA 17 Compatible | Pilot: 22mm | Material: SLA Resin"
+    }
+  };
+
+  // Explosion curve mapper based on scroll fraction
+  const getExplosionFactor = (p: number): number => {
+    if (p < 0.2) {
+      return 0;
+    } else if (p < 0.45) {
+      const t = (p - 0.2) / 0.25;
+      return t * t * (3 - 2 * t) * 1.3;
+    } else if (p < 0.65) {
+      return 1.3;
+    } else if (p < 0.82) {
+      const t = (p - 0.65) / 0.17;
+      return (1 - t * t * (3 - 2 * t)) * 1.3;
+    } else {
+      const t = (p - 0.82) / 0.18;
+      return t * t * (3 - 2 * t) * 0.8;
     }
   };
 
@@ -151,14 +184,29 @@ export default function LandingPage() {
     if (activeTab === "gear") {
       const baseGeo = new THREE.CylinderGeometry(2.2, 2.2, 1.4, 32);
       const baseMesh = new THREE.Mesh(baseGeo, metalMat);
+      baseMesh.userData = {
+        originalPos: baseMesh.position.clone(),
+        explodeDir: new THREE.Vector3(0, -0.3, 0),
+        explodeScale: 1.0
+      };
       previewGroup.add(baseMesh);
 
       const collarGeo = new THREE.CylinderGeometry(1.3, 1.3, 2.6, 32);
       const collarMesh = new THREE.Mesh(collarGeo, accentMat);
+      collarMesh.userData = {
+        originalPos: collarMesh.position.clone(),
+        explodeDir: new THREE.Vector3(0, 1.5, 0),
+        explodeScale: 1.0
+      };
       previewGroup.add(collarMesh);
 
       const boreGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.8, 32);
       const boreMesh = new THREE.Mesh(boreGeo, holeMat);
+      boreMesh.userData = {
+        originalPos: boreMesh.position.clone(),
+        explodeDir: new THREE.Vector3(0, -1.8, 0),
+        explodeScale: 1.0
+      };
       previewGroup.add(boreMesh);
 
       const toothCount = 18;
@@ -168,29 +216,55 @@ export default function LandingPage() {
         const tooth = new THREE.Mesh(toothGeo, metalMat);
         tooth.position.set(Math.cos(angle) * 2.3, 0, Math.sin(angle) * 2.3);
         tooth.rotation.y = -angle;
+        tooth.userData = {
+          originalPos: tooth.position.clone(),
+          explodeDir: new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle)),
+          explodeScale: 1.5
+        };
         previewGroup.add(tooth);
       }
 
       const ringGeo = new THREE.TorusGeometry(4.0, 0.08, 8, 48);
       ringGeo.rotateX(Math.PI / 2);
       const ringMesh = new THREE.Mesh(ringGeo, glowMat);
+      ringMesh.userData = {
+        originalPos: ringMesh.position.clone(),
+        isGlowRing: true,
+        originalScale: 1.0,
+        explodeDir: new THREE.Vector3(0, 0, 0)
+      };
       previewGroup.add(ringMesh);
 
     } else if (activeTab === "bracket") {
       const backGeo = new THREE.BoxGeometry(0.4, 4.2, 2.4);
       const backMesh = new THREE.Mesh(backGeo, metalMat);
       backMesh.position.set(-1.8, 0.8, 0);
+      backMesh.userData = {
+        originalPos: backMesh.position.clone(),
+        explodeDir: new THREE.Vector3(-1.2, 0, 0),
+        explodeScale: 1.5
+      };
       previewGroup.add(backMesh);
 
       const baseGeo = new THREE.BoxGeometry(3.6, 0.4, 2.4);
       const baseMesh = new THREE.Mesh(baseGeo, metalMat);
       baseMesh.position.set(0, -1.1, 0);
+      baseMesh.userData = {
+        originalPos: baseMesh.position.clone(),
+        explodeDir: new THREE.Vector3(0, -1.0, 0),
+        explodeScale: 1.2
+      };
       previewGroup.add(baseMesh);
 
       const braceGeo = new THREE.BoxGeometry(0.35, 4.0, 0.6);
       const braceMesh = new THREE.Mesh(braceGeo, accentMat);
       braceMesh.position.set(-0.2, 0.2, 0);
       braceMesh.rotation.z = -Math.PI / 4;
+      braceMesh.userData = {
+        originalPos: braceMesh.position.clone(),
+        explodeDir: new THREE.Vector3(1, 1, 0).normalize(),
+        explodeScale: 1.5
+      };
       previewGroup.add(braceMesh);
 
       const holeGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 16);
@@ -198,12 +272,35 @@ export default function LandingPage() {
       
       const h1 = new THREE.Mesh(holeGeo, holeMat);
       h1.position.set(-1.8, 2.0, 0.6);
-      const h2 = h1.clone();
+      h1.userData = {
+        originalPos: h1.position.clone(),
+        explodeDir: new THREE.Vector3(-1.2, 0.6, 0.6).normalize(),
+        explodeScale: 2.0
+      };
+      
+      const h2 = new THREE.Mesh(holeGeo, holeMat);
       h2.position.set(-1.8, 2.0, -0.6);
-      const h3 = h1.clone();
+      h2.userData = {
+        originalPos: h2.position.clone(),
+        explodeDir: new THREE.Vector3(-1.2, 0.6, -0.6).normalize(),
+        explodeScale: 2.0
+      };
+
+      const h3 = new THREE.Mesh(holeGeo, holeMat);
       h3.position.set(-1.8, -0.4, 0.6);
-      const h4 = h1.clone();
+      h3.userData = {
+        originalPos: h3.position.clone(),
+        explodeDir: new THREE.Vector3(-1.2, -0.6, 0.6).normalize(),
+        explodeScale: 2.0
+      };
+
+      const h4 = new THREE.Mesh(holeGeo, holeMat);
       h4.position.set(-1.8, -0.4, -0.6);
+      h4.userData = {
+        originalPos: h4.position.clone(),
+        explodeDir: new THREE.Vector3(-1.2, -0.6, -0.6).normalize(),
+        explodeScale: 2.0
+      };
 
       previewGroup.add(h1, h2, h3, h4);
 
@@ -211,83 +308,193 @@ export default function LandingPage() {
       const ringMesh = new THREE.Mesh(ringGeo, glowMat);
       ringMesh.position.set(0.8, -1.1, 0);
       ringMesh.rotateY(Math.PI / 2);
+      ringMesh.userData = {
+        originalPos: ringMesh.position.clone(),
+        isGlowRing: true,
+        originalScale: 1.0,
+        explodeDir: new THREE.Vector3(0, 0, 0)
+      };
       previewGroup.add(ringMesh);
 
     } else if (activeTab === "pipe") {
       const vertGeo = new THREE.CylinderGeometry(0.8, 0.8, 4.2, 24);
       const vertPipe = new THREE.Mesh(vertGeo, metalMat);
+      vertPipe.userData = {
+        originalPos: vertPipe.position.clone(),
+        explodeDir: new THREE.Vector3(0, 0, 0)
+      };
       previewGroup.add(vertPipe);
 
       const horizGeo = new THREE.CylinderGeometry(0.8, 0.8, 2.0, 24);
       horizGeo.rotateZ(Math.PI / 2);
       const horizPipe = new THREE.Mesh(horizGeo, metalMat);
       horizPipe.position.set(1.0, 0, 0);
+      horizPipe.userData = {
+        originalPos: horizPipe.position.clone(),
+        explodeDir: new THREE.Vector3(1.2, 0, 0),
+        explodeScale: 1.4
+      };
       previewGroup.add(horizPipe);
 
       const flangeGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.3, 24);
       const f1 = new THREE.Mesh(flangeGeo, accentMat);
       f1.position.set(0, 2.1, 0);
-      const f2 = f1.clone();
+      f1.userData = {
+        originalPos: f1.position.clone(),
+        explodeDir: new THREE.Vector3(0, 1.4, 0),
+        explodeScale: 1.5
+      };
+
+      const f2 = new THREE.Mesh(flangeGeo, accentMat);
       f2.position.set(0, -2.1, 0);
+      f2.userData = {
+        originalPos: f2.position.clone(),
+        explodeDir: new THREE.Vector3(0, -1.4, 0),
+        explodeScale: 1.5
+      };
 
       const fSideGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.3, 24);
       fSideGeo.rotateZ(Math.PI / 2);
       const f3 = new THREE.Mesh(fSideGeo, accentMat);
       f3.position.set(2.0, 0, 0);
+      f3.userData = {
+        originalPos: f3.position.clone(),
+        explodeDir: new THREE.Vector3(1.6, 0, 0),
+        explodeScale: 1.5
+      };
 
       previewGroup.add(f1, f2, f3);
 
       const boreVGeo = new THREE.CylinderGeometry(0.5, 0.5, 4.4, 24);
       const boreV = new THREE.Mesh(boreVGeo, holeMat);
+      boreV.userData = {
+        originalPos: boreV.position.clone(),
+        explodeDir: new THREE.Vector3(0, -1.8, 0),
+        explodeScale: 1.0
+      };
       
       const boreHGeo = new THREE.CylinderGeometry(0.5, 0.5, 2.2, 24);
       boreHGeo.rotateZ(Math.PI / 2);
       const boreH = new THREE.Mesh(boreHGeo, holeMat);
       boreH.position.set(1.0, 0, 0);
+      boreH.userData = {
+        originalPos: boreH.position.clone(),
+        explodeDir: new THREE.Vector3(1.8, 0, 0),
+        explodeScale: 1.2
+      };
 
       previewGroup.add(boreV, boreH);
 
       const ringGeo = new THREE.TorusGeometry(3.2, 0.06, 8, 32);
       const ringMesh = new THREE.Mesh(ringGeo, glowMat);
       ringMesh.rotateX(Math.PI / 4);
+      ringMesh.userData = {
+        originalPos: ringMesh.position.clone(),
+        isGlowRing: true,
+        originalScale: 1.0,
+        explodeDir: new THREE.Vector3(0, 0, 0)
+      };
       previewGroup.add(ringMesh);
 
     } else if (activeTab === "housing") {
       const plateGeo = new THREE.BoxGeometry(3.8, 0.5, 3.8);
       const plateMesh = new THREE.Mesh(plateGeo, metalMat);
+      plateMesh.userData = {
+        originalPos: plateMesh.position.clone(),
+        explodeDir: new THREE.Vector3(0, -0.8, 0),
+        explodeScale: 1.2
+      };
       previewGroup.add(plateMesh);
 
       const bossGeo = new THREE.CylinderGeometry(1.5, 1.5, 1.0, 32);
       const bossMesh = new THREE.Mesh(bossGeo, accentMat);
       bossMesh.position.set(0, 0.3, 0);
+      bossMesh.userData = {
+        originalPos: bossMesh.position.clone(),
+        explodeDir: new THREE.Vector3(0, 1.4, 0),
+        explodeScale: 1.5
+      };
       previewGroup.add(bossMesh);
 
       const CentralBoreGeo = new THREE.CylinderGeometry(0.65, 0.65, 1.4, 32);
       const centralBore = new THREE.Mesh(CentralBoreGeo, holeMat);
       centralBore.position.set(0, 0.3, 0);
+      centralBore.userData = {
+        originalPos: centralBore.position.clone(),
+        explodeDir: new THREE.Vector3(0, -1.6, 0),
+        explodeScale: 1.5
+      };
       previewGroup.add(centralBore);
 
       const boltGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.7, 16);
+      
       const b1 = new THREE.Mesh(boltGeo, brassMat);
       b1.position.set(1.4, 0.15, 1.4);
-      const b2 = b1.clone();
+      b1.userData = {
+        originalPos: b1.position.clone(),
+        explodeDir: new THREE.Vector3(1, 2, 1).normalize(),
+        explodeScale: 2.2
+      };
+
+      const b2 = new THREE.Mesh(boltGeo, brassMat);
       b2.position.set(1.4, 0.15, -1.4);
-      const b3 = b1.clone();
+      b2.userData = {
+        originalPos: b2.position.clone(),
+        explodeDir: new THREE.Vector3(1, 2, -1).normalize(),
+        explodeScale: 2.2
+      };
+
+      const b3 = new THREE.Mesh(boltGeo, brassMat);
       b3.position.set(-1.4, 0.15, 1.4);
-      const b4 = b1.clone();
+      b3.userData = {
+        originalPos: b3.position.clone(),
+        explodeDir: new THREE.Vector3(-1, 2, 1).normalize(),
+        explodeScale: 2.2
+      };
+
+      const b4 = new THREE.Mesh(boltGeo, brassMat);
       b4.position.set(-1.4, 0.15, -1.4);
+      b4.userData = {
+        originalPos: b4.position.clone(),
+        explodeDir: new THREE.Vector3(-1, 2, -1).normalize(),
+        explodeScale: 2.2
+      };
 
       previewGroup.add(b1, b2, b3, b4);
 
       const holeGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 16);
+      
       const h1 = new THREE.Mesh(holeGeo, holeMat);
       h1.position.set(1.4, -0.1, 1.4);
-      const h2 = h1.clone();
+      h1.userData = {
+        originalPos: h1.position.clone(),
+        explodeDir: new THREE.Vector3(1, -2, 1).normalize(),
+        explodeScale: 2.2
+      };
+
+      const h2 = new THREE.Mesh(holeGeo, holeMat);
       h2.position.set(1.4, -0.1, -1.4);
-      const h3 = h1.clone();
+      h2.userData = {
+        originalPos: h2.position.clone(),
+        explodeDir: new THREE.Vector3(1, -2, -1).normalize(),
+        explodeScale: 2.2
+      };
+
+      const h3 = new THREE.Mesh(holeGeo, holeMat);
       h3.position.set(-1.4, -0.1, 1.4);
-      const h4 = h1.clone();
+      h3.userData = {
+        originalPos: h3.position.clone(),
+        explodeDir: new THREE.Vector3(-1, -2, 1).normalize(),
+        explodeScale: 2.2
+      };
+
+      const h4 = new THREE.Mesh(holeGeo, holeMat);
       h4.position.set(-1.4, -0.1, -1.4);
+      h4.userData = {
+        originalPos: h4.position.clone(),
+        explodeDir: new THREE.Vector3(-1, -2, -1).normalize(),
+        explodeScale: 2.2
+      };
 
       previewGroup.add(h1, h2, h3, h4);
 
@@ -299,6 +506,12 @@ export default function LandingPage() {
         opacity: 0.12
       });
       const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+      wireMesh.userData = {
+        originalPos: wireMesh.position.clone(),
+        isGlowRing: true,
+        originalScale: 1.0,
+        explodeDir: new THREE.Vector3(0, 0, 0)
+      };
       previewGroup.add(wireMesh);
     }
 
@@ -311,9 +524,13 @@ export default function LandingPage() {
     const animate = () => {
       animFrame = requestAnimationFrame(animate);
       
+      // Interpolate scroll fraction for inertia / damping
+      currentScrollFraction.current += (targetScrollFraction.current - currentScrollFraction.current) * 0.08;
+      const sf = currentScrollFraction.current;
+
       // Rotations
-      previewGroup.rotation.y = Date.now() * 0.0003 + scrollYRef.current * 0.0008;
-      previewGroup.rotation.x = Math.sin(Date.now() * 0.0002) * 0.06 + scrollYRef.current * 0.0003;
+      previewGroup.rotation.y = Date.now() * 0.0002 + sf * Math.PI * 1.5;
+      previewGroup.rotation.x = Math.sin(Date.now() * 0.00015) * 0.05 + sf * Math.PI * 0.2;
 
       // Scale-up spring transition
       if (previewGroup.scale.x < 1) {
@@ -321,9 +538,30 @@ export default function LandingPage() {
         previewGroup.scale.set(nextScale, nextScale, nextScale);
       }
 
-      // Parallax scroll movements
-      camera.position.z = 16 + Math.min(scrollYRef.current * 0.006, 10);
-      camera.position.y = 11 - Math.min(scrollYRef.current * 0.003, 5);
+      // Deconstruction / Explosion logic
+      const explosion = getExplosionFactor(sf);
+      
+      previewGroup.children.forEach((child) => {
+        if (child.userData && child.userData.originalPos) {
+          const originalPos = child.userData.originalPos as THREE.Vector3;
+          const explodeDir = child.userData.explodeDir as THREE.Vector3;
+          const scale = child.userData.explodeScale || 1.0;
+          
+          if (explodeDir) {
+            child.position.copy(originalPos).addScaledVector(explodeDir, explosion * scale);
+          }
+          
+          if (child.userData.isGlowRing) {
+            const baseScale = child.userData.originalScale || 1.0;
+            const newScale = baseScale + explosion * 0.4;
+            child.scale.set(newScale, newScale, newScale);
+          }
+        }
+      });
+
+      // Camera orbiting
+      camera.position.z = 16 - sf * 5;
+      camera.position.y = 11 - sf * 3;
       camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
@@ -420,135 +658,137 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 py-12 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
-        
-        {/* Left: Text copy */}
-        <motion.div 
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="lg:col-span-7 space-y-8"
-        >
+      {/* Master Scroll-Linked Grid Container */}
+      <div 
+        ref={gridContainerRef}
+        className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-x-12 items-start relative py-12 md:py-20"
+      >
+        {/* Row 1, Left: Hero copy */}
+        <div className="lg:col-span-7 order-1 lg:row-start-1 space-y-8 lg:pb-12">
           <motion.div 
-            variants={fadeUpVariants}
-            className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-500 text-[10px] font-mono shadow-sm"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="space-y-8"
           >
-            <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-            <span>CEM (Computational Engineering Model) v1.5</span>
-          </motion.div>
-          
-          <div className="space-y-4">
-            <motion.h1 
+            <motion.div 
               variants={fadeUpVariants}
-              className="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.08] text-white"
+              className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-500 text-[10px] font-mono shadow-sm"
             >
-              Translate Prompts into{" "}
-              <span className="text-amber-500">
-                Solid Watertight CAD Geometry
-              </span>
-            </motion.h1>
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              <span>CEM (Computational Engineering Model) v1.5</span>
+            </motion.div>
             
-            <motion.p 
+            <div className="space-y-4">
+              <motion.h1 
+                variants={fadeUpVariants}
+                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.08] text-white"
+              >
+                Translate Prompts into{" "}
+                <span className="text-amber-550">
+                  Solid Watertight CAD Geometry
+                </span>
+              </motion.h1>
+              
+              <motion.p 
+                variants={fadeUpVariants}
+                className="text-zinc-400 text-sm md:text-base leading-relaxed max-w-xl"
+              >
+                An agentic compilation pipeline mapping technical specifications and PDF manufacturer datasheets into structural solid geometry. Features automated physics-driven stress overrides and tolerance auditing.
+              </motion.p>
+            </div>
+
+            {/* Quick HUD Metrics in Hero */}
+            <motion.div 
               variants={fadeUpVariants}
-              className="text-zinc-400 text-sm md:text-base leading-relaxed max-w-xl"
+              className="grid grid-cols-3 gap-4 border border-zinc-850 bg-zinc-900/30 p-4 rounded-lg max-w-md font-mono"
             >
-              An agentic compilation pipeline mapping technical specifications and PDF manufacturer datasheets into structural solid geometry. Features automated physics-driven stress overrides and tolerance auditing.
-            </motion.p>
-          </div>
+              <div className="space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase block">Engine Resolution</span>
+                <span className="text-xs font-bold text-zinc-200">50 μm Voxel</span>
+              </div>
+              <div className="space-y-1 border-l border-zinc-850 pl-4">
+                <span className="text-[9px] text-zinc-500 uppercase block">Stress Enforcer</span>
+                <span className="text-xs font-bold text-amber-550">Hoop + Cantilever</span>
+              </div>
+              <div className="space-y-1 border-l border-zinc-850 pl-4">
+                <span className="text-[9px] text-zinc-500 uppercase block">Format</span>
+                <span className="text-xs font-bold text-zinc-200">Watertight 3MF</span>
+              </div>
+            </motion.div>
 
-          {/* Quick HUD Metrics in Hero */}
+            <motion.div 
+              variants={fadeUpVariants}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <Link
+                href="/workspace"
+                className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-4 px-8 rounded-lg flex items-center justify-center space-x-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer"
+              >
+                <span>LAUNCH COMPILER WORKSPACE</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a
+                href="#showroom"
+                className="bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white font-mono font-bold text-xs py-4 px-8 rounded-lg flex items-center justify-center space-x-2 transition-all"
+              >
+                <span>BROWSE TEMPLATES</span>
+              </a>
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* Row 1-3, Right: Sticky Three.js Viewport */}
+        <div className="lg:col-span-5 order-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-24 h-[360px] md:h-[450px] lg:h-[calc(100vh-12rem)] min-h-[400px] z-20 my-8 lg:my-0">
           <motion.div 
-            variants={fadeUpVariants}
-            className="grid grid-cols-3 gap-4 border border-zinc-850 bg-zinc-900/30 p-4 rounded-lg max-w-md font-mono"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, type: "spring" }}
+            className="w-full h-full glass-panel rounded-lg overflow-hidden shadow-2xl relative border border-zinc-850/80 cyber-scanline"
           >
-            <div className="space-y-1">
-              <span className="text-[9px] text-zinc-500 uppercase block">Engine Resolution</span>
-              <span className="text-xs font-bold text-zinc-200">50 μm Voxel</span>
+            {/* HUD decorative corners */}
+            <div className="hud-corner hud-tl" />
+            <div className="hud-corner hud-tr" />
+            <div className="hud-corner hud-bl" />
+            <div className="hud-corner hud-br" />
+            
+            <div ref={threeRef} className="w-full h-full" />
+            
+            <div className="absolute top-4 left-4 bg-zinc-950/90 border border-zinc-850 px-3.5 py-1.5 rounded text-[10px] font-mono text-amber-550 flex items-center space-x-2 shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
+              <span>REAL-TIME 3D VIEWPORT</span>
             </div>
-            <div className="space-y-1 border-l border-zinc-850 pl-4">
-              <span className="text-[9px] text-zinc-500 uppercase block">Stress Enforcer</span>
-              <span className="text-xs font-bold text-amber-550">Hoop + Cantilever</span>
+
+            <div className="absolute top-4 right-4 bg-zinc-950/90 border border-zinc-850 px-3 py-1 rounded text-[9px] font-mono text-zinc-400 shadow-sm">
+              Active: <span className="text-amber-550 font-bold uppercase">{presets[activeTab].title}</span>
             </div>
-            <div className="space-y-1 border-l border-zinc-850 pl-4">
-              <span className="text-[9px] text-zinc-500 uppercase block">Format</span>
-              <span className="text-xs font-bold text-zinc-200">Watertight 3MF</span>
+            
+            {/* Technical metadata */}
+            <div className="absolute bottom-4 left-4 bg-zinc-950/85 border border-zinc-850 p-3 rounded max-w-xs space-y-1 font-mono text-[9px] text-zinc-400 shadow-md">
+              <div className="flex justify-between space-x-8">
+                <span>BOUNDS:</span>
+                <span className="text-zinc-200 font-bold">120 x 120 x 80 mm</span>
+              </div>
+              <div className="flex justify-between space-x-8">
+                <span>SURFACE:</span>
+                <span className="text-amber-550 font-bold">Watertight Mesh</span>
+              </div>
             </div>
           </motion.div>
+        </div>
 
-          <motion.div 
-            variants={fadeUpVariants}
-            className="flex flex-col sm:flex-row gap-4"
-          >
-            <Link
-              href="/workspace"
-              className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-4 px-8 rounded-lg flex items-center justify-center space-x-2.5 transition-all shadow-md hover:shadow-lg cursor-pointer"
-            >
-              <span>LAUNCH COMPILER WORKSPACE</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <a
-              href="#showroom"
-              className="bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white font-mono font-bold text-xs py-4 px-8 rounded-lg flex items-center justify-center space-x-2 transition-all"
-            >
-              <span>BROWSE TEMPLATES</span>
-            </a>
-          </motion.div>
-        </motion.div>
-
-        {/* Right: Rotating Three.js Viewport */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, type: "spring" }}
-          className="lg:col-span-5 h-[360px] md:h-[450px] glass-panel rounded-lg overflow-hidden shadow-2xl relative border border-zinc-850/80 cyber-scanline"
-        >
-          {/* HUD decorative corners */}
-          <div className="hud-corner hud-tl" />
-          <div className="hud-corner hud-tr" />
-          <div className="hud-corner hud-bl" />
-          <div className="hud-corner hud-br" />
-          
-          <div ref={threeRef} className="w-full h-full" />
-          
-          <div className="absolute top-4 left-4 bg-zinc-950/90 border border-zinc-850 px-3.5 py-1.5 rounded text-[10px] font-mono text-amber-500 flex items-center space-x-2 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
-            <span>REAL-TIME 3D VIEWPORT</span>
-          </div>
-
-          <div className="absolute top-4 right-4 bg-zinc-950/90 border border-zinc-850 px-3 py-1 rounded text-[9px] font-mono text-zinc-400 shadow-sm">
-            Active: <span className="text-amber-500 font-bold uppercase">{presets[activeTab].title}</span>
-          </div>
-          
-          {/* Technical metadata */}
-          <div className="absolute bottom-4 left-4 bg-zinc-950/85 border border-zinc-850 p-3 rounded max-w-xs space-y-1 font-mono text-[9px] text-zinc-400 shadow-md">
-            <div className="flex justify-between space-x-8">
-              <span>BOUNDS:</span>
-              <span className="text-zinc-200 font-bold">120 x 120 x 80 mm</span>
-            </div>
-            <div className="flex justify-between space-x-8">
-              <span>SURFACE:</span>
-              <span className="text-amber-550 font-bold">Watertight Mesh</span>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Feature / Pipeline Section */}
-      <section id="pipeline" className="border-t border-zinc-900 bg-zinc-950/20 py-20 md:py-28 relative">
-        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
-        <div className="max-w-7xl mx-auto px-6 space-y-16">
-          
+        {/* Row 2, Left: Pipeline Section */}
+        <div id="pipeline" className="lg:col-span-7 order-3 lg:row-start-2 mt-20 lg:mt-32 space-y-12">
           <motion.div 
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={fadeUpVariants}
-            className="text-center space-y-3"
+            className="space-y-3"
           >
             <h2 className="text-xs font-bold font-mono tracking-widest text-amber-500 uppercase">Computational pipeline</h2>
             <p className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-none">How the Voxel Compiler Works</p>
-            <p className="text-zinc-400 text-sm max-w-lg mx-auto">Our multi-agent runtime parses prompts and generates compliant spatial components.</p>
+            <p className="text-zinc-400 text-sm max-w-lg">Our multi-agent runtime parses prompts and generates compliant spatial components.</p>
           </motion.div>
 
           <motion.div 
@@ -556,9 +796,8 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.1 }}
             variants={containerVariants}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
           >
-            
             {/* Step 1 */}
             <motion.div variants={fadeUpVariants} className="h-full">
               <div 
@@ -646,131 +885,128 @@ export default function LandingPage() {
                 {hoveredFeature === 3 && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500" />}
               </div>
             </motion.div>
-
           </motion.div>
         </div>
-      </section>
 
-      {/* Preset Showroom Section */}
-      <section id="showroom" className="max-w-7xl mx-auto px-6 py-20 md:py-28 space-y-12">
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUpVariants}
-          className="flex flex-col md:flex-row md:items-end justify-between gap-6"
-        >
-          <div className="space-y-3">
-            <h2 className="text-xs font-bold font-mono tracking-widest text-amber-500 uppercase">Engineering library</h2>
-            <p className="text-2xl md:text-4xl font-extrabold tracking-tight text-white">Component Templates</p>
-          </div>
-          
-          {/* Framer Motion Sliding Tab selectors */}
-          <div className="bg-zinc-950 border border-zinc-900 p-1 rounded-lg flex flex-wrap gap-1">
-            {Object.keys(presets).map((key) => {
-              const k = key as keyof typeof presets;
-              const isSelected = activeTab === k;
-              return (
-                <button
-                  key={k}
-                  onClick={() => setActiveTab(k)}
-                  className="px-4 py-2 rounded text-[11px] font-mono font-bold uppercase relative transition-colors cursor-pointer"
-                  style={{ color: isSelected ? "#09090b" : "#a1a1aa" }}
-                >
-                  {isSelected && (
-                    <motion.div
-                      layoutId="activeTabIndicator"
-                      className="absolute inset-0 bg-amber-500 rounded shadow"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">{presets[k].title}</span>
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Selected Preset Details Glass Card */}
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUpVariants}
-          className="glass-panel p-6 md:p-8 rounded-lg border border-zinc-850 glow-card grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch"
-        >
-          <div className="lg:col-span-7 flex flex-col justify-between py-2 space-y-6">
-            <div className="space-y-4">
-              <span className="text-[9px] font-mono font-bold text-amber-500 bg-zinc-900 border border-zinc-800 px-3 py-1 rounded tracking-wider uppercase">
-                {presets[activeTab].spec}
-              </span>
-              <h3 className="text-xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
-                {presets[activeTab].title} Template
-              </h3>
-              <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-xl">
-                {presets[activeTab].desc}
-              </p>
-            </div>
-
-            {/* Prompt showcase */}
-            <div className="bg-zinc-950 border border-zinc-900 p-4.5 rounded font-mono relative">
-              <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1.5">GENERATED INTENT FORMULA:</span>
-              <p className="text-xs text-zinc-300 italic leading-relaxed select-all">
-                "{presets[activeTab].prompt}"
-              </p>
-            </div>
-
-            <div>
-              <Link
-                href={`/workspace?prompt=${encodeURIComponent(presets[activeTab].prompt)}`}
-                className="inline-flex items-center space-x-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-3.5 px-7 rounded shadow-md transition-all cursor-pointer"
-              >
-                <span>LOAD TEMPLATE IN WORKSPACE</span>
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          <div className="lg:col-span-5 bg-zinc-950 rounded border border-zinc-900 p-6 flex flex-col justify-between space-y-6 relative overflow-hidden cyber-scanline">
-            {/* HUD decorative corners */}
-            <div className="hud-corner hud-tl" />
-            <div className="hud-corner hud-tr" />
-            <div className="hud-corner hud-bl" />
-            <div className="hud-corner hud-br" />
-            
-            <div className="flex justify-between items-center text-[9px] font-mono text-zinc-500 border-b border-zinc-900 pb-3">
-              <span>PARAMETER MATRIX</span>
-              <span>CEM-01</span>
+        {/* Row 3, Left: Showroom Section */}
+        <div id="showroom" className="lg:col-span-7 order-4 lg:row-start-3 mt-20 lg:mt-32 space-y-12">
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUpVariants}
+            className="flex flex-col md:flex-row md:items-end justify-between gap-6"
+          >
+            <div className="space-y-3">
+              <h2 className="text-xs font-bold font-mono tracking-widest text-amber-500 uppercase">Engineering library</h2>
+              <p className="text-2xl md:text-4xl font-extrabold tracking-tight text-white">Component Templates</p>
             </div>
             
-            <div className="space-y-4 py-2 flex-grow flex flex-col justify-center">
-              <div className="flex justify-between items-baseline text-xs">
-                <span className="font-mono text-zinc-400 uppercase tracking-wider">Tolerance Range</span>
-                <span className="font-mono font-bold text-amber-500">+/- 0.05 mm</span>
-              </div>
-              <div className="flex justify-between items-baseline text-xs">
-                <span className="font-mono text-zinc-400 uppercase tracking-wider">Hoop Stress Limit</span>
-                <span className="font-mono font-bold text-zinc-200">Enforced</span>
-              </div>
-              <div className="flex justify-between items-baseline text-xs">
-                <span className="font-mono text-zinc-400 uppercase tracking-wider">Voxel Grid Density</span>
-                <span className="font-mono font-bold text-zinc-400">5.0 M voxels/cm³</span>
-              </div>
-              <div className="flex justify-between items-baseline text-xs">
-                <span className="font-mono text-zinc-400 uppercase tracking-wider">Watertight Proofing</span>
-                <span className="font-mono font-bold text-emerald-500 flex items-center gap-1.5">
-                  <CheckCircle className="h-4 w-4 text-emerald-500 animate-pulse" />
-                  <span>Verified</span>
+            {/* sliding tab selectors */}
+            <div className="bg-zinc-950 border border-zinc-900 p-1 rounded-lg flex flex-wrap gap-1">
+              {Object.keys(presets).map((key) => {
+                const k = key as keyof typeof presets;
+                const isSelected = activeTab === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setActiveTab(k)}
+                    className="px-4 py-2 rounded text-[11px] font-mono font-bold uppercase relative transition-colors cursor-pointer"
+                    style={{ color: isSelected ? "#09090b" : "#a1a1aa" }}
+                  >
+                    {isSelected && (
+                      <motion.div
+                        layoutId="activeTabIndicator"
+                        className="absolute inset-0 bg-amber-500 rounded shadow"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10">{presets[k].title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUpVariants}
+            className="glass-panel p-6 md:p-8 rounded-lg border border-zinc-850 glow-card grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch"
+          >
+            <div className="md:col-span-7 flex flex-col justify-between py-2 space-y-6">
+              <div className="space-y-4">
+                <span className="text-[9px] font-mono font-bold text-amber-500 bg-zinc-900 border border-zinc-800 px-3 py-1 rounded tracking-wider uppercase">
+                  {presets[activeTab].spec}
                 </span>
+                <h3 className="text-xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                  {presets[activeTab].title} Template
+                </h3>
+                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-xl">
+                  {presets[activeTab].desc}
+                </p>
+              </div>
+
+              {/* Prompt showcase */}
+              <div className="bg-zinc-950 border border-zinc-900 p-4.5 rounded font-mono relative">
+                <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1.5">GENERATED INTENT FORMULA:</span>
+                <p className="text-xs text-zinc-300 italic leading-relaxed select-all">
+                  "{presets[activeTab].prompt}"
+                </p>
+              </div>
+
+              <div>
+                <Link
+                  href={`/workspace?prompt=${encodeURIComponent(presets[activeTab].prompt)}`}
+                  className="inline-flex items-center space-x-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-3.5 px-7 rounded shadow-md transition-all cursor-pointer"
+                >
+                  <span>LOAD TEMPLATE IN WORKSPACE</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
               </div>
             </div>
 
-            <div className="text-[9px] font-mono text-zinc-500 bg-zinc-900/60 border border-zinc-900 p-3 rounded text-center">
-              PicoGK voxelization automatically scales boundaries to meet hoop stress constraints.
+            <div className="md:col-span-5 bg-zinc-950 rounded border border-zinc-900 p-6 flex flex-col justify-between space-y-6 relative overflow-hidden cyber-scanline">
+              <div className="hud-corner hud-tl" />
+              <div className="hud-corner hud-tr" />
+              <div className="hud-corner hud-bl" />
+              <div className="hud-corner hud-br" />
+              
+              <div className="flex justify-between items-center text-[9px] font-mono text-zinc-500 border-b border-zinc-900 pb-3">
+                <span>PARAMETER MATRIX</span>
+                <span>CEM-01</span>
+              </div>
+              
+              <div className="space-y-4 py-2 flex-grow flex flex-col justify-center">
+                <div className="flex justify-between items-baseline text-xs">
+                  <span className="font-mono text-zinc-400 uppercase tracking-wider">Tolerance Range</span>
+                  <span className="font-mono font-bold text-amber-500">+/- 0.05 mm</span>
+                </div>
+                <div className="flex justify-between items-baseline text-xs">
+                  <span className="font-mono text-zinc-400 uppercase tracking-wider">Hoop Stress Limit</span>
+                  <span className="font-mono font-bold text-zinc-200">Enforced</span>
+                </div>
+                <div className="flex justify-between items-baseline text-xs">
+                  <span className="font-mono text-zinc-400 uppercase tracking-wider">Voxel Grid Density</span>
+                  <span className="font-mono font-bold text-zinc-400">5.0 M voxels/cm³</span>
+                </div>
+                <div className="flex justify-between items-baseline text-xs">
+                  <span className="font-mono text-zinc-400 uppercase tracking-wider">Watertight Proofing</span>
+                  <span className="font-mono font-bold text-emerald-500 flex items-center gap-1.5">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 animate-pulse" />
+                    <span>Verified</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-[9px] font-mono text-zinc-500 bg-zinc-900/60 border border-zinc-900 p-3 rounded text-center">
+                PicoGK voxelization automatically scales boundaries to meet hoop stress constraints.
+              </div>
             </div>
-          </div>
-        </motion.div>
-      </section>
+          </motion.div>
+        </div>
+      </div>
 
       {/* Dynamic Telemetry Media Showcase */}
       <section id="imagery" className="border-t border-zinc-900 bg-zinc-950/20 py-20 md:py-28 relative">
