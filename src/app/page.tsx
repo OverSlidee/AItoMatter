@@ -9,7 +9,12 @@ import {
   Sparkles, 
   Activity, 
   Gauge,
-  Binary 
+  Binary,
+  FileText,
+  Sliders,
+  Download,
+  Terminal,
+  Check
 } from "lucide-react";
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "framer-motion";
 
@@ -94,14 +99,18 @@ export default function LandingPage() {
   const y0b = useTransform(smoothScroll, [0.0, 0.10, 0.14], [0, 0, -40]);
   const blur0b = useTransform(smoothScroll, [0.0, 0.10, 0.14], ["blur(0px)", "blur(0px)", "blur(12px)"]);
 
-  // Beat Aether: Aether Reveal (0.97 to 1.0)
-  const opacityAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], [0, 1, 1]);
-  const yAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], [40, 0, 0]);
-  const blurAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], ["blur(12px)", "blur(0px)", "blur(0px)"]);
+  // Beat Aether: Aether Reveal (0.55 to 0.70)
+  const opacityAether = useTransform(smoothScroll, [0.52, 0.55, 0.68, 0.72], [0, 1, 1, 0]);
+  const yAether = useTransform(smoothScroll, [0.52, 0.55, 0.68, 0.72], [40, 0, 0, -40]);
+  const blurAether = useTransform(smoothScroll, [0.52, 0.55, 0.68, 0.72], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
 
   // Pointer event mappings to prevent background overlay clicks when hidden
   const pointer0b = useTransform(opacity0b, (v) => v > 0.15 ? "auto" : "none");
   const pointerAether = useTransform(opacityAether, (v) => v > 0.15 ? "auto" : "none");
+
+  // Dot Navigation visibility adjustments (fade out past Aether section)
+  const dotsOpacity = useTransform(smoothScroll, [0.70, 0.73], [1, 0]);
+  const dotsPointerEvents = useTransform(smoothScroll, (v) => v > 0.71 ? "none" : "auto");
 
   // Scroll indicator chevron opacity (only active in intro block)
   const scrollIndicatorOpacity = useTransform(smoothScroll, [0.0, 0.05], [1, 0]);
@@ -192,7 +201,10 @@ export default function LandingPage() {
       
       const duration = 10.0; // Hardcoded length in seconds (10s)
       const targetScroll = smoothScroll.get();
-      const targetTime = targetScroll * duration;
+      
+      // Map scroll progress [0.0, 0.75] to video timeline [0.0, 10.0] seconds
+      const scrollPctForVideo = Math.min(1.0, targetScroll / 0.75);
+      const targetTime = scrollPctForVideo * duration;
 
       // Filter micro-jittering in browsers by easing targetTime
       smoothTime += (targetTime - smoothTime) * 0.10;
@@ -398,14 +410,17 @@ export default function LandingPage() {
       </div>
 
       {/* VERTICAL DOT NAVIGATION */}
-      <div className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 flex flex-col space-y-6 z-45 hidden sm:flex">
+      <motion.div 
+        style={{ opacity: dotsOpacity, pointerEvents: dotsPointerEvents }}
+        className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 flex flex-col space-y-6 z-45 hidden sm:flex"
+      >
         {[
           { label: "00 / BUILD", val: 0.0, activeStart: 0.0, activeEnd: 0.14 },
-          { label: "01 / AETHER", val: 0.98, activeStart: 0.95, activeEnd: 1.0 },
+          { label: "01 / AETHER", val: 0.62, activeStart: 0.52, activeEnd: 0.70 },
         ].map((item, idx) => (
           <DotIndicator key={idx} item={item} smoothScroll={smoothScroll} onClick={() => scrollToSection(item.val)} />
         ))}
-      </div>
+      </motion.div>
 
       {/* Scroll indicator chevron */}
       <motion.div 
@@ -417,7 +432,233 @@ export default function LandingPage() {
       </motion.div>
 
       {/* SCROLL RANGE SPACE DRIVER */}
-      <div className="h-[550vh] w-full pointer-events-none" />
+      <div className="h-[450vh] w-full pointer-events-none" />
+
+      {/* DYNAMIC CAPABILITIES SHOWCASE SECTION */}
+      <div className="relative z-20 bg-black border-t border-zinc-900/60 pb-32 pt-24">
+        {/* Decorative background grid inside capabilities */}
+        <div className="absolute inset-0 dot-grid opacity-30 pointer-events-none" />
+        
+        <div className="max-w-5xl mx-auto px-6 relative z-10">
+          
+          {/* Header */}
+          <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[10px] font-mono shadow-sm">
+              <Cpu className="h-3.5 w-3.5 text-amber-500" />
+              <span>AETHER IN ACTION</span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white uppercase">
+              Platform Capabilities
+            </h2>
+            <p className="text-sm text-zinc-400 font-mono tracking-wider uppercase">
+              Physical engineering parts generated directly from simple prompts.
+            </p>
+          </div>
+
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Card 1: Text to CAD */}
+            <div className="glass-panel p-6 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 w-fit mb-5">
+                <FileText className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">1. Plain-English Compiler</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                Type what you need—like a custom gear, bracket, or casing—and Aether compiles it directly into physical 3D geometry. No CAD experience required.
+              </p>
+              
+              {/* Mockup */}
+              <div className="mt-auto bg-zinc-950/80 border border-zinc-900 rounded-lg p-3.5 font-mono text-[9px] text-zinc-550">
+                <div className="text-[8px] text-zinc-600 mb-1.5 uppercase border-b border-zinc-900/50 pb-1 flex justify-between">
+                  <span>Prompt Compiler</span>
+                  <span className="text-amber-500 animate-pulse">● Live</span>
+                </div>
+                <div className="text-zinc-300 leading-normal italic mb-2.5">
+                  &ldquo;create a double-flanged shaft bracket, 40mm length, 12mm bore diameter&rdquo;
+                </div>
+                <div className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-[8px] py-1.5 px-2 rounded text-center transition-colors">
+                  COMPILE TO 3D MESH
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Iterative Timelines */}
+            <div className="glass-panel p-6 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 w-fit mb-5">
+                <Sliders className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">2. Iterative Design History</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                Don&apos;t worry about getting it perfect on the first try. You can modify designs with follow-up instructions and navigate version history dynamically.
+              </p>
+              
+              {/* Mockup */}
+              <div className="mt-auto bg-zinc-950/80 border border-zinc-900 rounded-lg p-3.5 font-mono text-[9px] text-zinc-550">
+                <div className="text-[8px] text-zinc-650 mb-2 uppercase border-b border-zinc-900/50 pb-1">
+                  Revision Timeline
+                </div>
+                <div className="space-y-2.5 relative pl-4 before:absolute before:left-[4px] before:top-2 before:bottom-2 before:w-[1px] before:bg-zinc-800">
+                  <div className="flex items-center space-x-2 relative">
+                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-800 absolute -left-[16px] border border-zinc-950" />
+                    <span className="text-zinc-550">v1.0</span>
+                    <span className="text-zinc-450 truncate">Base Bracket Model</span>
+                  </div>
+                  <div className="flex items-center space-x-2 relative">
+                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-800 absolute -left-[16px] border border-zinc-950" />
+                    <span className="text-zinc-555">v1.1</span>
+                    <span className="text-zinc-450 truncate">Added Central Cylinder</span>
+                  </div>
+                  <div className="flex items-center space-x-2 relative">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 absolute -left-[16px] border border-zinc-950 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                    <span className="text-amber-500 font-bold">v1.2</span>
+                    <span className="text-zinc-300 truncate font-semibold">Tension Rib Reinforced</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Live Compilation Logs */}
+            <div className="glass-panel p-6 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 w-fit mb-5">
+                <Terminal className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">3. Diagnostic Compiler Logs</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                Watch Aether build your physical geometry frame-by-frame. Observe voxel tensor operations, physical stress audits, and compliance checks live.
+              </p>
+              
+              {/* Mockup */}
+              <div className="mt-auto bg-zinc-950/80 border border-zinc-900 rounded-lg p-3.5 font-mono text-[8px] text-zinc-550">
+                <div className="text-[8px] text-zinc-650 mb-1.5 uppercase border-b border-zinc-900/50 pb-1">
+                  Active Compiler Console
+                </div>
+                <div className="space-y-1.5 text-zinc-450">
+                  <div className="flex justify-between">
+                    <span>[info] parsing voxel model...</span>
+                    <span className="text-zinc-600">0.02s</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>[info] manifold check: solid 100%</span>
+                    <span className="text-emerald-500">pass</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>[info] optimizing SLA mesh...</span>
+                    <span className="text-zinc-600">0.04s</span>
+                  </div>
+                  <div className="text-amber-500 font-bold border-t border-zinc-900/50 pt-1 flex justify-between mt-1">
+                    <span>[done] compilation complete</span>
+                    <span>0.08s</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Material Optimization */}
+            <div className="glass-panel p-6 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 w-fit mb-5">
+                <Cpu className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">4. Multi-Material Settings</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                Specify your manufacturing target—Plastic, Resin, or Metal—and our compiler automatically builds solid meshes optimized for your material characteristics.
+              </p>
+              
+              {/* Mockup */}
+              <div className="mt-auto bg-zinc-950/80 border border-zinc-900 rounded-lg p-3.5 font-mono text-[9px] text-zinc-550">
+                <div className="text-[8px] text-zinc-600 mb-2 uppercase border-b border-zinc-900/50 pb-1">
+                  Manufacturing Method
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 text-center text-[7px]">
+                  <div className="bg-zinc-900 border border-zinc-850 py-1.5 rounded text-zinc-500 uppercase">
+                    FDM Plastic
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-850 py-1.5 rounded text-zinc-500 uppercase">
+                    SLA Resin
+                  </div>
+                  <div className="bg-amber-500/15 border border-amber-500/50 py-1.5 rounded text-amber-500 font-bold uppercase shadow-[0_0_6px_rgba(245,158,11,0.15)]">
+                    SLM Metal
+                  </div>
+                </div>
+                <div className="mt-2.5 text-[8px] text-zinc-400 flex items-center space-x-1.5">
+                  <Check className="h-3 w-3 text-emerald-500 shrink-0" />
+                  <span>Configuring voxel resolution for alloy sintering.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5: WebGL 3D Preview */}
+            <div className="glass-panel p-6 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 w-fit mb-5">
+                <Layers className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">5. Interactive 3D Viewer</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                Inspect your designs in real-time. Use the browser viewport to rotate, zoom, and verify structure before clicking download.
+              </p>
+              
+              {/* Mockup */}
+              <div className="mt-auto bg-zinc-950/80 border border-zinc-900 rounded-lg p-3.5 font-mono text-[9px] text-zinc-550 h-20 flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 flex items-center justify-center">
+                  {/* Mock grid lines */}
+                  <div className="w-full h-[1px] bg-white absolute top-1/2" />
+                  <div className="h-full w-[1px] bg-white absolute left-1/2" />
+                  <div className="w-12 h-12 border border-white rounded transform rotate-45 animate-spin-slow" />
+                </div>
+                <div className="text-[7px] text-zinc-600 uppercase relative z-10 flex justify-between">
+                  <span>3D Viewport</span>
+                  <span>90 FPS</span>
+                </div>
+                <div className="text-[7px] text-zinc-450 relative z-10 bg-zinc-900/60 w-fit px-1.5 py-0.5 rounded border border-zinc-850">
+                  Rotate: Click &amp; Drag
+                </div>
+              </div>
+            </div>
+
+            {/* Card 6: Watertight Exports */}
+            <div className="glass-panel p-6 rounded-xl border border-zinc-900/80 bg-zinc-950/40 relative flex flex-col h-full group glow-card">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 w-fit mb-5">
+                <Download className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">6. 3D-Printer Ready Files</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                Export generated structures directly to watertight 3MF and STL formats. Guaranteed solid geometry with zero open mesh boundaries.
+              </p>
+              
+              {/* Mockup */}
+              <div className="mt-auto bg-zinc-950/80 border border-zinc-900 rounded-lg p-3.5 font-mono text-[9px] text-zinc-550">
+                <div className="text-[8px] text-zinc-650 mb-1.5 uppercase border-b border-zinc-900/50 pb-1">
+                  Compile Output
+                </div>
+                <div className="flex justify-between items-center bg-zinc-900/60 p-1.5 rounded border border-zinc-850 mb-2">
+                  <span className="text-zinc-305 font-bold truncate">bracket_v1.2_slm.3mf</span>
+                  <span className="text-zinc-500 text-[8px] shrink-0">1.8 MB</span>
+                </div>
+                <div className="w-full bg-amber-500/10 border border-amber-500/30 text-amber-500 hover:bg-amber-500/20 font-bold text-[8px] py-1.5 px-2 rounded text-center transition-colors flex items-center justify-center space-x-1">
+                  <Download className="h-2.5 w-2.5" />
+                  <span>DOWNLOAD WATERTIGHT 3MF</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* CTA Footer */}
+          <div className="mt-20 text-center space-y-4">
+            <Link
+              href="/workspace"
+              className="inline-flex bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-4 px-10 rounded shadow-md transition-all items-center space-x-3 cursor-pointer"
+            >
+              <span>LAUNCH LIVE WORKSPACE NOW</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
+              No registration or setup needed to run initial compiles.
+            </div>
+          </div>
+
+        </div>
+      </div>
 
     </div>
   );
