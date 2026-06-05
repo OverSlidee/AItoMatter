@@ -32,10 +32,10 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
 
     // Create scene, camera, renderer
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x030712); // match page background
+    scene.background = new THREE.Color(0x000000); // match page background
 
     // Premium glowing Ground Grid Helper
-    const gridHelper = new THREE.GridHelper(100, 40, 0x06b6d4, 0x1f2937);
+    const gridHelper = new THREE.GridHelper(100, 40, 0xca8a04, 0x18181b);
     gridHelper.position.y = -15;
     scene.add(gridHelper);
 
@@ -77,11 +77,11 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
     dirLight1.position.set(10, 20, 15);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0x06b6d4, 0.6);
+    const dirLight2 = new THREE.DirectionalLight(0xca8a04, 0.6);
     dirLight2.position.set(-10, -10, 15);
     scene.add(dirLight2);
 
-    const dirLight3 = new THREE.DirectionalLight(0xa855f7, 0.5);
+    const dirLight3 = new THREE.DirectionalLight(0xc2410c, 0.5);
     dirLight3.position.set(0, 10, -20);
     scene.add(dirLight3);
 
@@ -91,26 +91,26 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
 
     // Material definitions
     const metalMaterial = new THREE.MeshStandardMaterial({
-      color: 0x475569, // slate metal
+      color: 0x27272a, // zinc metal
       metalness: 0.85,
       roughness: 0.25,
       side: THREE.DoubleSide
     });
 
     const wireMaterial = new THREE.MeshBasicMaterial({
-      color: 0x06b6d4,
+      color: 0xca8a04, // bronze wire
       wireframe: true,
       transparent: true,
       opacity: 0.4
     });
 
     const boreMaterial = new THREE.MeshBasicMaterial({
-      color: 0x090d16,
+      color: 0x09090b,
       side: THREE.DoubleSide
     });
 
     const highlightMaterial = new THREE.MeshStandardMaterial({
-      color: 0xa855f7,
+      color: 0xc2410c, // copper highlight
       metalness: 0.7,
       roughness: 0.3
     });
@@ -415,19 +415,19 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
   };
 
   return (
-    <div className="relative w-full h-full min-h-[380px] bg-slate-950 rounded-lg overflow-hidden border border-slate-800/80">
+    <div className="relative w-full h-full min-h-[380px] bg-zinc-950 rounded-lg overflow-hidden border border-zinc-900/80">
       
       {/* 3D Canvas Container */}
       <div ref={containerRef} className="w-full h-full" />
       
       {/* Floating UI Header */}
-      <div className="absolute top-3 left-3 bg-slate-900/90 border border-slate-800/80 px-3 py-1 rounded text-[10px] font-mono text-cyan-400 flex items-center space-x-1.5 shadow-md">
-        <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+      <div className="absolute top-3 left-3 bg-zinc-900/90 border border-zinc-800/80 px-3 py-1 rounded text-[10px] font-mono text-amber-500 flex items-center space-x-1.5 shadow-md">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
         <span>INTERACTIVE CAD VIEWER</span>
       </div>
 
       {/* Orbit Controls Instruction Banner */}
-      <div className="absolute bottom-3 left-3 bg-slate-900/70 backdrop-blur px-2.5 py-1 rounded text-[9px] font-mono text-slate-400 select-none pointer-events-none hidden sm:block">
+      <div className="absolute bottom-3 left-3 bg-zinc-900/70 backdrop-blur px-2.5 py-1 rounded text-[9px] font-mono text-zinc-400 select-none pointer-events-none hidden sm:block">
         Left-Click + Drag: Rotate | Scroll: Zoom | Right-Click: Pan
       </div>
 
@@ -435,13 +435,13 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
       <div className="absolute top-3 right-3 flex flex-col space-y-2">
         
         {/* View Mode Selectors */}
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-800/80 rounded-lg p-1 flex items-center space-x-1 shadow-lg">
+        <div className="bg-zinc-900/90 backdrop-blur border border-zinc-800/80 rounded-lg p-1 flex items-center space-x-1 shadow-lg">
           <button
             onClick={() => setViewMode("composite")}
             className={`p-1.5 rounded text-xs font-mono font-bold tracking-wider flex items-center space-x-1 cursor-pointer transition-all ${
               viewMode === "composite"
-                ? "bg-cyan-500 text-slate-950 font-bold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-amber-500 text-zinc-950 font-bold"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
             title="Composite Mesh View"
           >
@@ -453,8 +453,8 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
             onClick={() => setViewMode("solid")}
             className={`p-1.5 rounded text-xs font-mono font-bold tracking-wider flex items-center space-x-1 cursor-pointer transition-all ${
               viewMode === "solid"
-                ? "bg-cyan-500 text-slate-950 font-bold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-amber-500 text-zinc-950 font-bold"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
             title="Solid Material View"
           >
@@ -465,8 +465,8 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
             onClick={() => setViewMode("wireframe")}
             className={`p-1.5 rounded text-xs font-mono font-bold tracking-wider flex items-center space-x-1 cursor-pointer transition-all ${
               viewMode === "wireframe"
-                ? "bg-cyan-500 text-slate-950 font-bold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-amber-500 text-zinc-950 font-bold"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
             title="Wireframe Mesh Grid"
           >
@@ -478,7 +478,7 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
         {/* Camera Reset Utilities */}
         <button
           onClick={handleResetCamera}
-          className="self-end bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-cyan-400 p-2 rounded-lg shadow-lg cursor-pointer transition-all flex items-center space-x-1"
+          className="self-end bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-amber-500 p-2 rounded-lg shadow-lg cursor-pointer transition-all flex items-center space-x-1"
           title="Reset Camera Target"
         >
           <RotateCcw className="h-3.5 w-3.5" />
