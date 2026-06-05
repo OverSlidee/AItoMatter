@@ -18,6 +18,7 @@ try:
     
     # 1. Pull latest git changes
     print("=== PULLING LATEST CHANGES ===")
+    ssh.exec_command("cd /home/username/AItoMatter && git reset --hard")
     stdin, stdout, stderr = ssh.exec_command("cd /home/username/AItoMatter && git pull origin main")
     print(stdout.read().decode('utf-8'))
     print(stderr.read().decode('utf-8'))
