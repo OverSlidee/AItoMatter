@@ -137,6 +137,22 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
       
       // Position ground grid helper exactly beneath the model bounds
       gridHelper.position.y = box.min.y - center.y - 2;
+
+      // Adjust camera distance dynamically to fit the model bounds
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      if (maxDim > 0) {
+        const distance = maxDim * 1.5; // multiplier to give nice padding around the model
+        camera.position.set(distance * 0.8, distance * 0.6, distance * 1.2);
+        camera.lookAt(0, 0, 0);
+
+        // Update controls limits and target
+        controls.target.set(0, 0, 0);
+        controls.minDistance = maxDim * 0.3;
+        controls.maxDistance = maxDim * 5;
+        controls.update();
+      }
     };
 
     const renderFallbackGeometry = () => {
