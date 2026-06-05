@@ -96,43 +96,25 @@ export default function LandingPage() {
     });
   };
 
-  // Beat 0: Intro (0.0 to 0.12)
-  const opacity0 = useTransform(smoothScroll, [0.0, 0.08, 0.12], [1, 1, 0]);
-  const y0 = useTransform(smoothScroll, [0.0, 0.08, 0.12], [0, 0, -40]);
-  const blur0 = useTransform(smoothScroll, [0.0, 0.08, 0.12], ["blur(0px)", "blur(0px)", "blur(12px)"]);
+  // Beat 0a: Introduced by VeloLabs (0.0 to 0.08)
+  const opacity0a = useTransform(smoothScroll, [0.0, 0.05, 0.08], [1, 1, 0]);
+  const y0a = useTransform(smoothScroll, [0.0, 0.05, 0.08], [0, 0, -40]);
+  const blur0a = useTransform(smoothScroll, [0.0, 0.05, 0.08], ["blur(0px)", "blur(0px)", "blur(12px)"]);
 
-  // Beat 1: Aether Reveal (0.12 to 0.32)
-  const opacity1 = useTransform(smoothScroll, [0.10, 0.16, 0.28, 0.32], [0, 1, 1, 0]);
-  const y1 = useTransform(smoothScroll, [0.10, 0.16, 0.28, 0.32], [40, 0, 0, -40]);
-  const blur1 = useTransform(smoothScroll, [0.10, 0.16, 0.28, 0.32], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
+  // Beat 0b: Build By VeloLabs.IO (0.08 to 0.16)
+  const opacity0b = useTransform(smoothScroll, [0.07, 0.10, 0.14, 0.16], [0, 1, 1, 0]);
+  const y0b = useTransform(smoothScroll, [0.07, 0.10, 0.14, 0.16], [40, 0, 0, -40]);
+  const blur0b = useTransform(smoothScroll, [0.07, 0.10, 0.14, 0.16], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
 
-  // Beat 2: Ingest (0.32 to 0.50)
-  const opacity2 = useTransform(smoothScroll, [0.30, 0.36, 0.46, 0.50], [0, 1, 1, 0]);
-  const y2 = useTransform(smoothScroll, [0.30, 0.36, 0.46, 0.50], [40, 0, 0, -40]);
-  const blur2 = useTransform(smoothScroll, [0.30, 0.36, 0.46, 0.50], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
-
-  // Beat 3: Physics (0.50 to 0.68)
-  const opacity3 = useTransform(smoothScroll, [0.48, 0.54, 0.64, 0.68], [0, 1, 1, 0]);
-  const y3 = useTransform(smoothScroll, [0.48, 0.54, 0.64, 0.68], [40, 0, 0, -40]);
-  const blur3 = useTransform(smoothScroll, [0.48, 0.54, 0.64, 0.68], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
-
-  // Beat 4: Kinematics (0.68 to 0.84)
-  const opacity4 = useTransform(smoothScroll, [0.66, 0.72, 0.80, 0.84], [0, 1, 1, 0]);
-  const y4 = useTransform(smoothScroll, [0.66, 0.72, 0.80, 0.84], [40, 0, 0, -40]);
-  const blur4 = useTransform(smoothScroll, [0.66, 0.72, 0.80, 0.84], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
-
-  // Beat 5: Workspace (0.84 to 1.0)
-  const opacity5 = useTransform(smoothScroll, [0.82, 0.88, 1.0], [0, 1, 1]);
-  const y5 = useTransform(smoothScroll, [0.82, 0.88, 1.0], [40, 0, 0]);
-  const blur5 = useTransform(smoothScroll, [0.82, 0.88, 1.0], ["blur(12px)", "blur(0px)", "blur(0px)"]);
+  // Beat Aether: Aether Reveal (0.97 to 1.0)
+  const opacityAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], [0, 1, 1]);
+  const yAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], [40, 0, 0]);
+  const blurAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], ["blur(12px)", "blur(0px)", "blur(0px)"]);
 
   // Pointer event mappings to prevent background overlay clicks when hidden
-  const pointer0 = useTransform(opacity0, (v) => v > 0.15 ? "auto" : "none");
-  const pointer1 = useTransform(opacity1, (v) => v > 0.15 ? "auto" : "none");
-  const pointer2 = useTransform(opacity2, (v) => v > 0.15 ? "auto" : "none");
-  const pointer3 = useTransform(opacity3, (v) => v > 0.15 ? "auto" : "none");
-  const pointer4 = useTransform(opacity4, (v) => v > 0.15 ? "auto" : "none");
-  const pointer5 = useTransform(opacity5, (v) => v > 0.15 ? "auto" : "none");
+  const pointer0a = useTransform(opacity0a, (v) => v > 0.15 ? "auto" : "none");
+  const pointer0b = useTransform(opacity0b, (v) => v > 0.15 ? "auto" : "none");
+  const pointerAether = useTransform(opacityAether, (v) => v > 0.15 ? "auto" : "none");
 
   // Scroll indicator chevron opacity (only active in intro block)
   const scrollIndicatorOpacity = useTransform(smoothScroll, [0.0, 0.05], [1, 0]);
@@ -210,11 +192,12 @@ export default function LandingPage() {
 
       if (tensionRef.current) {
         let baseTension = 0.0;
-        if (targetScroll > 0.12 && targetScroll <= 0.32) baseTension = 14.2;
-        else if (targetScroll > 0.32 && targetScroll <= 0.50) baseTension = 48.7;
-        else if (targetScroll > 0.50 && targetScroll <= 0.68) baseTension = 192.3; // Physics stress peaks
-        else if (targetScroll > 0.68 && targetScroll <= 0.84) baseTension = 97.4;
-        else if (targetScroll > 0.84) baseTension = 4.8;
+        if (targetScroll > 0.0 && targetScroll <= 0.08) baseTension = 4.2; 
+        else if (targetScroll > 0.08 && targetScroll <= 0.18) baseTension = 14.8; 
+        else if (targetScroll > 0.18 && targetScroll <= 0.95) {
+          baseTension = 14.8 + (targetScroll - 0.18) * 220; 
+        }
+        else if (targetScroll > 0.95) baseTension = 198.4; 
 
         const currentTensionText = tensionRef.current.innerText;
         const currentTensionVal = parseFloat(currentTensionText) || 0;
@@ -225,18 +208,14 @@ export default function LandingPage() {
 
       if (statusRef.current) {
         let statusMsg = "STANDBY";
-        if (targetScroll < 0.12) {
+        if (targetScroll < 0.08) {
           statusMsg = "INTRO COGNITION";
-        } else if (targetScroll >= 0.12 && targetScroll < 0.32) {
-          statusMsg = "AETHER CORE INITIALIZATION";
-        } else if (targetScroll >= 0.32 && targetScroll < 0.50) {
-          statusMsg = "DATASHEET INGESTION PIPELINE";
-        } else if (targetScroll >= 0.50 && targetScroll < 0.68) {
-          statusMsg = "PHYSICS AUDIT / STRESS RESOLVER";
-        } else if (targetScroll >= 0.68 && targetScroll < 0.84) {
-          statusMsg = "KINEMATIC CLEARANCE MATRIX";
+        } else if (targetScroll >= 0.08 && targetScroll < 0.18) {
+          statusMsg = "VELOLABS BUILD INIT";
+        } else if (targetScroll >= 0.18 && targetScroll < 0.95) {
+          statusMsg = "OPERATING NEURAL CORE v1.5";
         } else {
-          statusMsg = "WATERTIGHT CAD COMPILED";
+          statusMsg = "AETHER ACTIVE - AI TO MATTER";
         }
         statusRef.current.innerText = statusMsg;
       }
@@ -323,125 +302,67 @@ export default function LandingPage() {
           style={{ filter: "contrast(1.15) brightness(0.95)" }}
         />
       </div>
-
       {/* CENTERED FIXED SCROLLYTELLING OVERLAY CONTAINER */}
       <div className="fixed inset-0 flex items-center justify-center z-10 pointer-events-none">
         <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center justify-center text-center relative min-h-[450px]">
           
-          {/* Beat 0: Intro */}
+          {/* Beat 0a: Intro */}
           <motion.div 
-            style={{ opacity: opacity0, y: y0, filter: blur0, pointerEvents: pointer0 }} 
+            style={{ opacity: opacity0a, y: y0a, filter: blur0a, pointerEvents: pointer0a }} 
             className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
           >
-            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[10px] font-mono shadow-sm">
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-500 text-[10px] font-mono shadow-sm">
               <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
               <span>COMPUTATIONAL ENGINEERING EXPERIMENT</span>
             </div>
             <h1 
-              style={metallicShadow}
-              className="text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
+              style={{ textShadow: "0 0 35px rgba(245,158,11,0.25), 0 4px 12px rgba(0,0,0,0.85)" }}
+              className="text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-amber-500 uppercase"
             >
               INTRODUCED BY VELOLABS
             </h1>
-            <p className="text-zinc-100 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-lg">
+            <p className="text-amber-500/80 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-lg">
               SCROLL TO DECONSTRUCT THE CORE &amp; EXPLORE PLATFORM CAPABILITIES.
             </p>
           </motion.div>
 
-          {/* Beat 1: Aether Reveal */}
+          {/* Beat 0b: Build By VeloLabs */}
           <motion.div 
-            style={{ opacity: opacity1, y: y1, filter: blur1, pointerEvents: pointer1 }} 
+            style={{ opacity: opacity0b, y: y0b, filter: blur0b, pointerEvents: pointer0b }} 
             className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
           >
-            <div className="text-zinc-555 font-mono text-[9px] tracking-[0.3em] uppercase">SYSTEM / ARCHITECTURE</div>
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-500 text-[10px] font-mono shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              <span>SYSTEM COMPILE INITIATED</span>
+            </div>
+            <h1 
+              style={{ textShadow: "0 0 35px rgba(245,158,11,0.25), 0 4px 12px rgba(0,0,0,0.85)" }}
+              className="text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-amber-500 uppercase"
+            >
+              BUILD BY VELOLABS.IO
+            </h1>
+            <p className="text-amber-500/80 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-lg">
+              ESTABLISHING CORE INTERACTION WITH THE CEM MODEL.
+            </p>
+          </motion.div>
+
+          {/* Beat Aether: Aether Core Reveal */}
+          <motion.div 
+            style={{ opacity: opacityAether, y: yAether, filter: blurAether, pointerEvents: pointerAether }} 
+            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
+          >
+            <div className="text-amber-500/80 font-mono text-[9px] tracking-[0.3em] uppercase">SYSTEM / CORE ACTIVATED</div>
             <h2 
-              style={metallicShadow}
-              className="text-4xl md:text-7xl font-black tracking-[0.25em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
+              style={{ textShadow: "0 0 45px rgba(245,158,11,0.3), 0 4px 15px rgba(0,0,0,0.9)" }}
+              className="text-5xl md:text-8xl font-black tracking-[0.25em] leading-none text-amber-500 uppercase"
             >
               AETHER
             </h2>
-            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
-              OUR CUSTOM COMPUTATIONAL ENGINEERING ENGINE. TRANSLATING RAW ARTIFICIAL INTELLIGENCE DIRECTLY INTO WATERTIGHT PHYSICAL MATTER.
+            <p className="text-amber-500 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+              AI to Matter CEM engine
             </p>
-          </motion.div>
-
-          {/* Beat 2: Capability 1 - Ingest */}
-          <motion.div 
-            style={{ opacity: opacity2, y: y2, filter: blur2, pointerEvents: pointer2 }} 
-            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
-          >
-            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-              <Binary className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-              <span>CAPABILITY 01</span>
-            </div>
-            <h2 
-              style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
-            >
-              INGEST DATASHEETS
-            </h2>
-            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
-              UPLOAD MANUFACTURER PDF SPECIFICATIONS OR TYPE SIMPLE MECHANICAL REQUIREMENTS. AETHER INSTANTLY PARSES PRECISION BOUNDARIES AND FORCE LOADS.
-            </p>
-          </motion.div>
-
-          {/* Beat 3: Capability 2 - Audits */}
-          <motion.div 
-            style={{ opacity: opacity3, y: y3, filter: blur3, pointerEvents: pointer3 }} 
-            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
-          >
-            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-              <Activity className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-              <span>CAPABILITY 02</span>
-            </div>
-            <h2 
-              style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
-            >
-              PHYSICS AUDITS
-            </h2>
-            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
-              EVALUATES MECHANICAL STRAIN UNDER TORQUE LOAD. THE MODEL AUTOMATICALLY REINFORCES STRUCTURES AND THICKENS CASES TO ENFORCE OVERRIDE LIMITS.
-            </p>
-          </motion.div>
-
-          {/* Beat 4: Capability 3 - Kinematics */}
-          <motion.div 
-            style={{ opacity: opacity4, y: y4, filter: blur4, pointerEvents: pointer4 }} 
-            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
-          >
-            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-              <Cpu className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-              <span>CAPABILITY 03</span>
-            </div>
-            <h2 
-              style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
-            >
-              KINEMATIC SOLVER
-            </h2>
-            <p className="text-zinc-200 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
-              VERIFIES ROTATIONAL CLEARANCES AND CLOSED-LOOP TRANSMISSION LINKAGES. ENSURES ALL MOVING JOINTS SWING FREELY WITHOUT COLLISION.
-            </p>
-          </motion.div>
-
-          {/* Beat 5: Workspace CTA & Stats */}
-          <motion.div 
-            style={{ opacity: opacity5, y: y5, filter: blur5, pointerEvents: pointer5 }} 
-            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
-          >
-            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-              <Gauge className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-              <span>CEM PRODUCTION TELEMETRY</span>
-            </div>
-            <h2 
-              style={metallicShadow}
-              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-100 to-zinc-300 uppercase"
-            >
-              04 / WORKSPACE
-            </h2>
             
-            <div className="grid grid-cols-3 gap-4 font-mono text-[9px] w-full max-w-md">
+            <div className="grid grid-cols-3 gap-4 font-mono text-[9px] w-full max-w-md pt-4 pointer-events-auto">
               <div className="glass-panel p-3 rounded border border-zinc-850 bg-zinc-900/40 backdrop-blur-md">
                 <span className="text-zinc-400 block mb-1 uppercase">Solves Speed</span>
                 <span className="text-sm font-bold text-amber-550">0.08 s</span>
@@ -456,15 +377,15 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="space-y-4 pt-2 pointer-events-auto">
+            <div className="space-y-4 pt-4 pointer-events-auto">
               <Link
                 href="/workspace"
-                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-4 px-10 rounded shadow-md transition-all flex items-center justify-center space-x-3 cursor-pointer"
+                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-zinc-955 font-mono font-bold text-xs py-4 px-10 rounded shadow-md transition-all flex items-center justify-center space-x-3 cursor-pointer"
               >
                 <span>LAUNCH COMPILER WORKSPACE</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <div className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">
+              <div className="text-[9px] font-mono text-zinc-450 uppercase tracking-wider">
                 &copy; {new Date().getFullYear()} VeloLabs. AI TO MATTER COMPILER PIPELINE.
               </div>
             </div>
@@ -476,12 +397,9 @@ export default function LandingPage() {
       {/* VERTICAL DOT NAVIGATION */}
       <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col space-y-6 z-45">
         {[
-          { label: "00 / INTRO", val: 0.0, activeStart: 0.0, activeEnd: 0.12 },
-          { label: "01 / AETHER", val: 0.22, activeStart: 0.12, activeEnd: 0.32 },
-          { label: "02 / INGEST", val: 0.41, activeStart: 0.32, activeEnd: 0.50 },
-          { label: "03 / AUDIT", val: 0.59, activeStart: 0.50, activeEnd: 0.68 },
-          { label: "04 / SOLVER", val: 0.77, activeStart: 0.68, activeEnd: 0.84 },
-          { label: "05 / WORKSPACE", val: 0.95, activeStart: 0.84, activeEnd: 1.0 },
+          { label: "00 / INTRO", val: 0.0, activeStart: 0.0, activeEnd: 0.08 },
+          { label: "01 / BUILD", val: 0.11, activeStart: 0.08, activeEnd: 0.18 },
+          { label: "02 / AETHER", val: 0.98, activeStart: 0.95, activeEnd: 1.0 },
         ].map((item, idx) => (
           <DotIndicator key={idx} item={item} smoothScroll={smoothScroll} onClick={() => scrollToSection(item.val)} />
         ))}
