@@ -89,15 +89,10 @@ export default function LandingPage() {
     });
   };
 
-  // Beat 0a: Introduced by VeloLabs (0.0 to 0.08)
-  const opacity0a = useTransform(smoothScroll, [0.0, 0.05, 0.08], [1, 1, 0]);
-  const y0a = useTransform(smoothScroll, [0.0, 0.05, 0.08], [0, 0, -40]);
-  const blur0a = useTransform(smoothScroll, [0.0, 0.05, 0.08], ["blur(0px)", "blur(0px)", "blur(12px)"]);
-
-  // Beat 0b: Build By VeloLabs.IO (0.08 to 0.16)
-  const opacity0b = useTransform(smoothScroll, [0.07, 0.10, 0.14, 0.16], [0, 1, 1, 0]);
-  const y0b = useTransform(smoothScroll, [0.07, 0.10, 0.14, 0.16], [40, 0, 0, -40]);
-  const blur0b = useTransform(smoothScroll, [0.07, 0.10, 0.14, 0.16], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
+  // Beat 0b: Build By VeloLabs (0.0 to 0.14)
+  const opacity0b = useTransform(smoothScroll, [0.0, 0.10, 0.14], [1, 1, 0]);
+  const y0b = useTransform(smoothScroll, [0.0, 0.10, 0.14], [0, 0, -40]);
+  const blur0b = useTransform(smoothScroll, [0.0, 0.10, 0.14], ["blur(0px)", "blur(0px)", "blur(12px)"]);
 
   // Beat Aether: Aether Reveal (0.97 to 1.0)
   const opacityAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], [0, 1, 1]);
@@ -105,7 +100,6 @@ export default function LandingPage() {
   const blurAether = useTransform(smoothScroll, [0.96, 0.98, 1.0], ["blur(12px)", "blur(0px)", "blur(0px)"]);
 
   // Pointer event mappings to prevent background overlay clicks when hidden
-  const pointer0a = useTransform(opacity0a, (v) => v > 0.15 ? "auto" : "none");
   const pointer0b = useTransform(opacity0b, (v) => v > 0.15 ? "auto" : "none");
   const pointerAether = useTransform(opacityAether, (v) => v > 0.15 ? "auto" : "none");
 
@@ -161,6 +155,12 @@ export default function LandingPage() {
 
   // Initial check in case video is cached and readyState is already loaded
   useEffect(() => {
+    // Force page scroll to top on reload/load to ensure video starts at the beginning
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo(0, 0);
+
     const video = videoRef.current;
     if (video) {
       if (video.readyState >= 3) {
@@ -329,12 +329,12 @@ export default function LandingPage() {
       <div className="fixed inset-0 flex items-center justify-center z-10 pointer-events-none">
         <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center justify-center text-center relative min-h-[350px] md:min-h-[450px]">
           
-          {/* Beat 0a: Intro */}
+          {/* Beat 0b: Build By VeloLabs */}
           <motion.div 
-            style={{ opacity: opacity0a, y: y0a, filter: blur0a, pointerEvents: pointer0a }} 
+            style={{ opacity: opacity0b, y: y0b, filter: blur0b, pointerEvents: pointer0b }} 
             className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
           >
-            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[9px] md:text-[10px] font-mono shadow-sm">
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-555 text-[9px] md:text-[10px] font-mono shadow-sm">
               <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
               <span>COMPUTATIONAL ENGINEERING EXPERIMENT</span>
             </div>
@@ -342,30 +342,10 @@ export default function LandingPage() {
               style={{ textShadow: "0 0 35px rgba(245,158,11,0.25), 0 4px 12px rgba(0,0,0,0.85)" }}
               className="text-3xl sm:text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-amber-500 uppercase"
             >
-              INTRODUCED BY VELOLABS
+              BUILD BY VELOLABS
             </h1>
             <p className="text-amber-500/80 text-[10px] sm:text-xs font-mono tracking-[0.15em] sm:tracking-[0.2em] uppercase leading-relaxed max-w-lg">
               SCROLL TO DECONSTRUCT THE CORE &amp; EXPLORE PLATFORM CAPABILITIES.
-            </p>
-          </motion.div>
-
-          {/* Beat 0b: Build By VeloLabs */}
-          <motion.div 
-            style={{ opacity: opacity0b, y: y0b, filter: blur0b, pointerEvents: pointer0b }} 
-            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
-          >
-            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[9px] md:text-[10px] font-mono shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-              <span>SYSTEM COMPILE INITIATED</span>
-            </div>
-            <h1 
-              style={{ textShadow: "0 0 35px rgba(245,158,11,0.25), 0 4px 12px rgba(0,0,0,0.85)" }}
-              className="text-3xl sm:text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-amber-500 uppercase"
-            >
-              BUILD BY VELOLABS.IO
-            </h1>
-            <p className="text-amber-500/80 text-[10px] sm:text-xs font-mono tracking-[0.15em] sm:tracking-[0.2em] uppercase leading-relaxed max-w-lg">
-              ESTABLISHING CORE INTERACTION WITH THE CEM MODEL.
             </p>
           </motion.div>
 
@@ -420,9 +400,8 @@ export default function LandingPage() {
       {/* VERTICAL DOT NAVIGATION */}
       <div className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 flex flex-col space-y-6 z-45 hidden sm:flex">
         {[
-          { label: "00 / INTRO", val: 0.0, activeStart: 0.0, activeEnd: 0.08 },
-          { label: "01 / BUILD", val: 0.11, activeStart: 0.08, activeEnd: 0.18 },
-          { label: "02 / AETHER", val: 0.98, activeStart: 0.95, activeEnd: 1.0 },
+          { label: "00 / BUILD", val: 0.0, activeStart: 0.0, activeEnd: 0.14 },
+          { label: "01 / AETHER", val: 0.98, activeStart: 0.95, activeEnd: 1.0 },
         ].map((item, idx) => (
           <DotIndicator key={idx} item={item} smoothScroll={smoothScroll} onClick={() => scrollToSection(item.val)} />
         ))}
