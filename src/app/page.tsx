@@ -170,146 +170,133 @@ export default function LandingPage() {
       opacity: 0.9
     });
 
-    // 1. Central Core Sphere
-    const coreGeo = new THREE.SphereGeometry(0.8, 32, 32);
-    const coreMesh = new THREE.Mesh(coreGeo, coreGlowMat);
-    coreMesh.userData = {
-      originalPos: coreMesh.position.clone(),
-      explodeDir: new THREE.Vector3(0, 1.8, 0),
-      explodeScale: 1.2
+    // 1. Central Core Sphere (Bionic Core)
+    const coreSphereGeo = new THREE.SphereGeometry(0.6, 32, 32);
+    const coreSphere = new THREE.Mesh(coreSphereGeo, coreGlowMat);
+    coreSphere.userData = {
+      originalPos: coreSphere.position.clone(),
+      explodeDir: new THREE.Vector3(0, 0, 0),
+      explodeScale: 0
     };
-    previewGroup.add(coreMesh);
+    previewGroup.add(coreSphere);
 
-    // 2. Core Torus Ring
-    const coreRingGeo = new THREE.TorusGeometry(1.4, 0.08, 16, 48);
+    // 2. Stacked Vertebrae Central Core (Orbiting and interlocking vertebrae rings)
+    for (let i = 0; i < 4; i++) {
+      const vertGeo = new THREE.TorusGeometry(0.9, 0.16, 12, 32);
+      vertGeo.rotateX(Math.PI / 2);
+      const vertMesh = new THREE.Mesh(vertGeo, brassMat);
+      vertMesh.position.y = -1.2 + i * 0.8;
+      vertMesh.userData = {
+        id: "lattice", // Treat as lattice for morphing
+        originalPos: vertMesh.position.clone(),
+        explodeDir: new THREE.Vector3(0, (i - 1.5) * 0.7, 0),
+        explodeScale: 1.0
+      };
+      previewGroup.add(vertMesh);
+    }
+
+    // 3. Central Core Torus Ring
+    const coreRingGeo = new THREE.TorusGeometry(1.5, 0.06, 16, 48);
     coreRingGeo.rotateX(Math.PI / 2);
     const coreRingMesh = new THREE.Mesh(coreRingGeo, ringGlowMat);
     coreRingMesh.userData = {
       originalPos: coreRingMesh.position.clone(),
       isGlowRing: true,
       originalScale: 1.0,
-      explodeDir: new THREE.Vector3(0, 1.8, 0),
-      explodeScale: 1.2
+      explodeDir: new THREE.Vector3(0, 0, 0),
+      explodeScale: 0
     };
     previewGroup.add(coreRingMesh);
 
-    // 3. Inner Lattice Web (6 bionic struts)
-    const strutGeo = new THREE.CylinderGeometry(0.08, 0.08, 3.6, 8);
-    
-    const s1 = new THREE.Mesh(strutGeo, brassMat);
-    s1.rotation.x = Math.PI / 4;
-    const s2 = new THREE.Mesh(strutGeo, brassMat);
-    s2.rotation.x = -Math.PI / 4;
-    const s3 = new THREE.Mesh(strutGeo, brassMat);
-    s3.rotation.z = Math.PI / 4;
-    const s4 = new THREE.Mesh(strutGeo, brassMat);
-    s4.rotation.z = -Math.PI / 4;
-    const s5 = new THREE.Mesh(strutGeo, brassMat);
-    s5.rotation.y = Math.PI / 4;
-    const s6 = new THREE.Mesh(strutGeo, brassMat);
-    s6.rotation.y = -Math.PI / 4;
-    
-    s1.userData = { id: "lattice", originalPos: s1.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
-    s2.userData = { id: "lattice", originalPos: s2.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
-    s3.userData = { id: "lattice", originalPos: s3.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
-    s4.userData = { id: "lattice", originalPos: s4.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
-    s5.userData = { id: "lattice", originalPos: s5.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
-    s6.userData = { id: "lattice", originalPos: s6.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
-    previewGroup.add(s1, s2, s3, s4, s5, s6);
+    // 4. 4-Way Splitting Exoskeleton Casings (4 quadrants splitting radially)
+    const quadrantAngles = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2];
+    quadrantAngles.forEach((startAng, idx) => {
+      const shellGeo = new THREE.CylinderGeometry(2.1, 2.1, 2.8, 16, 1, false, startAng, Math.PI / 2);
+      const shell = new THREE.Mesh(shellGeo, metalMat);
+      
+      const midAngle = startAng + Math.PI / 4;
+      const cos = Math.cos(midAngle);
+      const sin = Math.sin(midAngle);
 
-    // 4. Exoskeleton Casings (Left and Right halves)
-    const leftShellGeo = new THREE.CylinderGeometry(2.2, 2.2, 3.2, 32, 1, false, 0, Math.PI);
-    const leftShell = new THREE.Mesh(leftShellGeo, metalMat);
-    leftShell.userData = {
-      id: "casing",
-      originalPos: leftShell.position.clone(),
-      explodeDir: new THREE.Vector3(-1.8, 0, 0),
-      explodeScale: 1.5
-    };
-    previewGroup.add(leftShell);
-
-    // Left Casing Ribs
-    for (let r = 0; r < 3; r++) {
-      const ribGeo = new THREE.TorusGeometry(2.3, 0.12, 8, 32, Math.PI);
-      ribGeo.rotateX(Math.PI / 2);
-      const rib = new THREE.Mesh(ribGeo, metalMat);
-      rib.position.set(0, -1.0 + r * 1.0, 0);
-      rib.userData = {
-        id: "rib",
-        originalPos: rib.position.clone(),
-        explodeDir: new THREE.Vector3(-1.8, 0, 0),
+      shell.userData = {
+        id: "casing",
+        originalPos: shell.position.clone(),
+        explodeDir: new THREE.Vector3(cos * 1.8, 0, sin * 1.8),
         explodeScale: 1.5
       };
-      previewGroup.add(rib);
-    }
+      previewGroup.add(shell);
 
-    // Right Shell Casing
-    const rightShellGeo = new THREE.CylinderGeometry(2.2, 2.2, 3.2, 32, 1, false, Math.PI, Math.PI);
-    const rightShell = new THREE.Mesh(rightShellGeo, metalMat);
-    rightShell.userData = {
-      id: "casing",
-      originalPos: rightShell.position.clone(),
-      explodeDir: new THREE.Vector3(1.8, 0, 0),
-      explodeScale: 1.5
-    };
-    previewGroup.add(rightShell);
+      // Casing Ribs for each quadrant
+      for (let r = 0; r < 3; r++) {
+        const ribGeo = new THREE.TorusGeometry(2.2, 0.08, 6, 16, Math.PI / 2);
+        ribGeo.rotateX(Math.PI / 2);
+        ribGeo.rotateY(-startAng);
+        const rib = new THREE.Mesh(ribGeo, metalMat);
+        rib.position.set(0, -0.9 + r * 0.9, 0);
+        rib.userData = {
+          id: "rib",
+          originalPos: rib.position.clone(),
+          explodeDir: new THREE.Vector3(cos * 1.8, 0, sin * 1.8),
+          explodeScale: 1.5
+        };
+        previewGroup.add(rib);
+      }
+    });
 
-    // Right Casing Ribs
-    for (let r = 0; r < 3; r++) {
-      const ribGeo = new THREE.TorusGeometry(2.3, 0.12, 8, 32, Math.PI);
-      ribGeo.rotateX(Math.PI / 2);
-      ribGeo.rotateY(Math.PI);
-      const rib = new THREE.Mesh(ribGeo, metalMat);
-      rib.position.set(0, -1.0 + r * 1.0, 0);
-      rib.userData = {
-        id: "rib",
-        originalPos: rib.position.clone(),
-        explodeDir: new THREE.Vector3(1.8, 0, 0),
-        explodeScale: 1.5
-      };
-      previewGroup.add(rib);
-    }
-
-    // 5. Kinematic Hydraulic Linkages (4x pistons pointing diagonally)
+    // 5. Double-Stage Kinematic Hydraulic Pistons (4x radial pistons)
     const angles = [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4];
     angles.forEach((angle) => {
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
       
-      // Sleeve
-      const sleeveGeo = new THREE.CylinderGeometry(0.35, 0.35, 1.4, 16);
+      // Stage 1: Sleeve (Base outer cylinder, moves slightly on scroll)
+      const sleeveGeo = new THREE.CylinderGeometry(0.35, 0.35, 1.1, 12);
       sleeveGeo.rotateX(Math.PI / 2);
       sleeveGeo.rotateY(-angle);
       const sleeve = new THREE.Mesh(sleeveGeo, metalMat);
-      sleeve.position.set(cos * 1.6, 0, sin * 1.6);
+      sleeve.position.set(cos * 1.5, 0, sin * 1.5);
       sleeve.userData = {
         id: "sleeve",
         originalPos: sleeve.position.clone(),
         explodeDir: new THREE.Vector3(cos, 0, sin),
-        explodeScale: 1.3
+        explodeScale: 1.0
       };
       previewGroup.add(sleeve);
 
-      // Rod
-      const rodGeo = new THREE.CylinderGeometry(0.18, 0.18, 1.6, 16);
-      rodGeo.rotateX(Math.PI / 2);
-      rodGeo.rotateY(-angle);
-      const rod = new THREE.Mesh(rodGeo, metalMat);
-      rod.position.set(cos * 2.3, 0, sin * 2.3);
-      rod.userData = {
+      // Stage 2: Mid-Rod (Slides out of the sleeve)
+      const midRodGeo = new THREE.CylinderGeometry(0.22, 0.22, 1.2, 12);
+      midRodGeo.rotateX(Math.PI / 2);
+      midRodGeo.rotateY(-angle);
+      const midRod = new THREE.Mesh(midRodGeo, brassMat);
+      midRod.position.set(cos * 2.0, 0, sin * 2.0);
+      midRod.userData = {
+        id: "lattice", // Treat as lattice for morphing colors
+        originalPos: midRod.position.clone(),
+        explodeDir: new THREE.Vector3(cos * 1.5, 0, sin * 1.5),
+        explodeScale: 1.4
+      };
+      previewGroup.add(midRod);
+
+      // Stage 3: End-Connector Rod (Slides out of the mid-rod, moves the fastest)
+      const endRodGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.3, 12);
+      endRodGeo.rotateX(Math.PI / 2);
+      endRodGeo.rotateY(-angle);
+      const endRod = new THREE.Mesh(endRodGeo, metalMat);
+      endRod.position.set(cos * 2.6, 0, sin * 2.6);
+      endRod.userData = {
         id: "rod",
-        originalPos: rod.position.clone(),
-        explodeDir: new THREE.Vector3(cos * 1.8, 0, sin * 1.8),
+        originalPos: endRod.position.clone(),
+        explodeDir: new THREE.Vector3(cos * 2.0, 0, sin * 2.0),
         explodeScale: 1.8
       };
-      previewGroup.add(rod);
+      previewGroup.add(endRod);
     });
 
     // 6. Top & Bottom Joint Knuckle Mounts
     const topMountGeo = new THREE.TorusGeometry(0.8, 0.3, 16, 32);
     topMountGeo.rotateY(Math.PI / 2);
     const topMount = new THREE.Mesh(topMountGeo, metalMat);
-    topMount.position.set(0, 2.0, 0);
+    topMount.position.set(0, 2.2, 0);
     topMount.userData = {
       id: "joint",
       originalPos: topMount.position.clone(),
@@ -321,7 +308,7 @@ export default function LandingPage() {
     const bottomMountGeo = new THREE.TorusGeometry(0.8, 0.3, 16, 32);
     bottomMountGeo.rotateY(Math.PI / 2);
     const bottomMount = new THREE.Mesh(bottomMountGeo, metalMat);
-    bottomMount.position.set(0, -2.0, 0);
+    bottomMount.position.set(0, -2.2, 0);
     bottomMount.userData = {
       id: "joint",
       originalPos: bottomMount.position.clone(),
@@ -387,13 +374,14 @@ export default function LandingPage() {
       new THREE.Vector3(16, 10, 16)   // Beat 5: Stats/CTA
     ];
 
+    // Align base position to 0 (since lookAt target shifts it to the right visually)
     const modelPositions = [
-      new THREE.Vector3(2.2, 0, 0),  // Beat 0
-      new THREE.Vector3(2.2, 0, 0),    // Beat 1
-      new THREE.Vector3(2.2, 0, 0),    // Beat 2
-      new THREE.Vector3(2.2, 0.5, 0),  // Beat 3
-      new THREE.Vector3(2.2, 0, 0),  // Beat 4
-      new THREE.Vector3(0, -0.5, 0)   // Beat 5
+      new THREE.Vector3(0, 0, 0),  // Beat 0
+      new THREE.Vector3(0, 0, 0),  // Beat 1
+      new THREE.Vector3(0, 0, 0),  // Beat 2
+      new THREE.Vector3(0, 0.5, 0), // Beat 3
+      new THREE.Vector3(0, 0, 0),  // Beat 4
+      new THREE.Vector3(0, -0.5, 0) // Beat 5
     ];
 
     const explosionFactors = [0.0, 0.0, 1.3, 1.3, 0.0, 0.5];
@@ -551,7 +539,14 @@ export default function LandingPage() {
         }
       });
 
-      camera.lookAt(0, 0, 0);
+      // Offset camera lookAt target to place model on the right on desktop, centered on mobile
+      if (isMobile) {
+        camera.lookAt(0, 0.4, 0);
+      } else {
+        // Shifts target 1.8 units left, projecting model onto right side of screen
+        camera.lookAt(-1.8, 0, 0);
+      }
+
       renderer.render(scene, camera);
     };
     animate();
@@ -606,7 +601,7 @@ export default function LandingPage() {
           </Link>
           
           <nav className="hidden md:flex items-center space-x-8 text-[10px] font-mono tracking-widest text-zinc-400">
-            <button onClick={() => scrollToSection(1)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
+            <button onClick={() => scrollToSection(1)} className="hover:text-amber-550 transition-colors uppercase cursor-pointer">
               Gen 1
             </button>
             <button onClick={() => scrollToSection(2)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
@@ -658,7 +653,7 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[10px] font-mono shadow-sm">
                 <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>CEM (Computational Engineering Model) v1.5</span>
+                <span>Custom CEM (Computational Engineering Model) v1.5</span>
               </div>
               
               <div className="space-y-4">
@@ -670,23 +665,27 @@ export default function LandingPage() {
                 </h1>
                 
                 <p className="text-zinc-400 text-sm md:text-base leading-relaxed max-w-xl">
-                  An agentic compilation pipeline mapping technical specifications and PDF manufacturer datasheets into structural solid geometry. Features automated physics-driven stress overrides and tolerance auditing.
+                  An agentic compiler pipeline driving an in-house **1.4B Parameter CEM model** trained on 2.8M organic mechanical stress-strain solutions. Seamlessly maps datasheets and prompts into verified SLM Titanium parts.
                 </p>
               </div>
 
-              {/* Quick HUD Metrics in Hero */}
-              <div className="grid grid-cols-3 gap-4 border border-zinc-850 bg-zinc-900/30 p-4 rounded-lg max-w-md font-mono">
-                <div className="space-y-1">
-                  <span className="text-[9px] text-zinc-500 uppercase block">Engine Resolution</span>
-                  <span className="text-xs font-bold text-zinc-200">50 μm Voxel</span>
+              {/* Core capabilities list */}
+              <div className="space-y-3 font-mono text-xs text-zinc-300">
+                <div className="flex items-center space-x-2.5">
+                  <CheckCircle className="h-4 w-4 text-amber-550 shrink-0" />
+                  <span>Ingest manufacture PDF datasheets & textual requirements</span>
                 </div>
-                <div className="space-y-1 border-l border-zinc-850 pl-4">
-                  <span className="text-[9px] text-zinc-500 uppercase block">Stress Enforcer</span>
-                  <span className="text-xs font-bold text-amber-550">Hoop + Cantilever</span>
+                <div className="flex items-center space-x-2.5">
+                  <CheckCircle className="h-4 w-4 text-amber-550 shrink-0" />
+                  <span>Synthesize organic bionic lattices & protective stress shells</span>
                 </div>
-                <div className="space-y-1 border-l border-zinc-850 pl-4">
-                  <span className="text-[9px] text-zinc-500 uppercase block">Format</span>
-                  <span className="text-xs font-bold text-zinc-200">Watertight 3MF</span>
+                <div className="flex items-center space-x-2.5">
+                  <CheckCircle className="h-4 w-4 text-amber-550 shrink-0" />
+                  <span>Integrate multi-stage closed-loop kinematic joint linkages</span>
+                </div>
+                <div className="flex items-center space-x-2.5">
+                  <CheckCircle className="h-4 w-4 text-amber-550 shrink-0" />
+                  <span>1-click watertight solid compilation to 3MF formats</span>
                 </div>
               </div>
 
@@ -707,7 +706,7 @@ export default function LandingPage() {
               </div>
             </motion.div>
           </div>
-          <div className="lg:col-span-6 hidden lg:block" />
+          <div className="lg:col-span-6 hidden lg:block" /> {/* Pushes text to the left side */}
         </section>
 
         {/* Section 1: Gen 1 */}
@@ -725,25 +724,25 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
                 <Binary className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>1. INGESTION & TOPOLOGY</span>
+                <span>1. TOPOLOGY MATRIX COMPILATION</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-black text-white leading-none">Gen 1: Topological Voxel Lattice</h2>
               <p className="text-xs md:text-sm text-zinc-400 leading-relaxed max-w-xl">
-                Describe your mechanical intent using natural language, or upload an engineering datasheet. Our LLM extracts precise dimensional boundaries and converts textual requirements into bounding dimensions within a voxel mesh workspace.
+                The Custom CEM model extracts physical boundary conditions and load matrices. It maps vector stress nodes to generate an organic, weight-optimized central vertebra core, synthesized over a 5.0M voxel/cm³ spatial grid.
               </p>
               
               <div className="glass-panel p-4.5 rounded-lg border border-zinc-850 max-w-md font-mono text-[11px] space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">LATTICE NODES:</span>
-                  <span className="text-zinc-200 font-bold">1,420 Nodes</span>
+                  <span className="text-zinc-500">LATTICE MODEL:</span>
+                  <span className="text-zinc-200 font-bold">VeloLabs 1.4B CEM</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">VOXEL GRID DENSITY:</span>
-                  <span className="text-zinc-200 font-bold">5.0 M voxels/cm³</span>
+                  <span className="text-zinc-500">TRAINING CORPUS:</span>
+                  <span className="text-amber-550 font-bold">2.8M CAD Assemblies</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">RESOLUTION THRESHOLD:</span>
-                  <span className="text-amber-550 font-bold">&le; 100 µm</span>
+                  <span className="text-zinc-500">RESOLUTION MATRIX:</span>
+                  <span className="text-zinc-200 font-bold">&le; 50 µm Tolerance</span>
                 </div>
               </div>
             </motion.div>
@@ -766,25 +765,25 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
                 <Activity className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>2. STRESS & SAFETY AUDIT</span>
+                <span>2. LOCAL PHYSICS SAFETY AUDIT</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-black text-white leading-none">Gen 2: Stress Exoskeleton</h2>
               <p className="text-xs md:text-sm text-zinc-400 leading-relaxed max-w-xl">
-                A localized physics validation loop recalculates wall thicknesses, hoop stresses, and sheer tolerances. Wraps the lattice in a variable-thickness protective exoskeleton, enforcing overrides where mechanical failure is likely.
+                A localized physics validation loop recalculates wall thicknesses and hoop stresses. It wraps the vertebrae core in a 4-quadrant protective exoskeleton shell, automatically thickening structural nodes where mechanical strain is concentrated (up to 320MPa limit).
               </p>
               
               <div className="glass-panel p-4.5 rounded-lg border border-zinc-850 max-w-md font-mono text-[11px] space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">SHELL THICKNESS:</span>
-                  <span className="text-zinc-200 font-bold">1.2 mm - 4.5 mm</span>
+                  <span className="text-zinc-500">EXOSKELETON CASING:</span>
+                  <span className="text-zinc-200 font-bold">4-Quadrant Radial Split</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">STRESS CAPACITY:</span>
-                  <span className="text-zinc-200 font-bold">320 MPa Threshold</span>
+                  <span className="text-zinc-500">STRESS CAPABILITY:</span>
+                  <span className="text-zinc-200 font-bold">320 MPa Verified</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">SAFETY CONSTRAINT:</span>
-                  <span className="text-emerald-500 font-bold">2.2x Override Enforced</span>
+                  <span className="text-zinc-500">SAFETY ENFORCER:</span>
+                  <span className="text-emerald-500 font-bold">2.2x Automated Override</span>
                 </div>
               </div>
             </motion.div>
@@ -807,25 +806,25 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
                 <Cpu className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>3. MECHANICAL INTEGRATION</span>
+                <span>3. KINEMATIC RESOLUTION</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-black text-white leading-none">Gen 3: Kinematic Linkages</h2>
               <p className="text-xs md:text-sm text-zinc-400 leading-relaxed max-w-xl">
-                Integration of quasi-direct drive (QDD) motor flange mounts, joints, and closed-loop bionic transmission linkages. Animates and validates abduction/adduction flex clearance and shear load capacity under torque.
+                The model integrates quasi-direct drive (QDD) mounts and double-stage hydraulic linkages directly into the casing joints. The kinematic solver verifies collision-free limits, simulating rotation clearances and torque limits automatically.
               </p>
               
               <div className="glass-panel p-4.5 rounded-lg border border-zinc-850 max-w-md font-mono text-[11px] space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">TRANSMISSION:</span>
-                  <span className="text-zinc-200 font-bold">Closed-Loop Linkage</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">KINEMATICS:</span>
-                  <span className="text-zinc-200 font-bold">12-DoF Quadruped Joint</span>
+                  <span className="text-zinc-500">PISTON ASSEMBLY:</span>
+                  <span className="text-zinc-200 font-bold">Double-Stage Radial Piston</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">JOINT CLEARANCE:</span>
-                  <span className="text-amber-550 font-bold">Collision-Free Verified</span>
+                  <span className="text-emerald-500 font-bold">100% Collision-Free solved</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">DECONSTRUCTION RATE:</span>
+                  <span className="text-amber-550 font-bold">Multi-Speed Telescoping</span>
                 </div>
               </div>
             </motion.div>
@@ -848,11 +847,11 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
                 <CheckCircle className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>4. VOXEL COMPILATION</span>
+                <span>4. SOLID VOXEL COMPILATION</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-black text-white leading-none">Gen 4: Production 3MF</h2>
               <p className="text-xs md:text-sm text-zinc-400 leading-relaxed max-w-xl">
-                Final watertight solid voxel compilation. Unifies all structural layers into a single manifold print-ready file format (3MF), optimized for SLM Titanium Grade 5 sintering.
+                The final stage unifies the vertebrae core, quadrant casings, and telescoping hydraulic linkages into a single watertight manifold solid volume. Fully optimized for Selective Laser Melting (SLM) Titanium 3D printing.
               </p>
               
               {/* sliding tab selectors */}
@@ -909,23 +908,23 @@ export default function LandingPage() {
             <div className="space-y-6">
               <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
                 <Gauge className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>OPERATIONAL TELEMETRY</span>
+                <span>CEM SPECIFICATIONS & TELEMETRY</span>
               </div>
-              <h2 className="text-3xl md:text-5xl font-black text-white leading-none">Operational Metrics</h2>
+              <h2 className="text-3xl md:text-5xl font-black text-white leading-none">Computational Metrics</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono">
               <div className="glass-panel p-6 rounded border border-zinc-850">
-                <span className="text-[10px] text-zinc-500 uppercase block mb-2">Compiled Chassis Parts</span>
-                <span className="text-3xl md:text-4xl font-bold text-amber-550">1,248+</span>
+                <span className="text-[10px] text-zinc-500 uppercase block mb-2">CEM Model Size</span>
+                <span className="text-3xl md:text-4xl font-bold text-amber-550">1.4B Param</span>
               </div>
               <div className="glass-panel p-6 rounded border border-zinc-850">
-                <span className="text-[10px] text-zinc-500 uppercase block mb-2">Engine Solves</span>
-                <span className="text-3xl md:text-4xl font-bold text-zinc-100">0.08 s</span>
+                <span className="text-[10px] text-zinc-500 uppercase block mb-2">Training Corpus</span>
+                <span className="text-3xl md:text-4xl font-bold text-zinc-100">2.8M CAD</span>
               </div>
               <div className="glass-panel p-6 rounded border border-zinc-850">
-                <span className="text-[10px] text-zinc-500 uppercase block mb-2">Manifold Check Success</span>
-                <span className="text-3xl md:text-4xl font-bold text-emerald-500">100%</span>
+                <span className="text-[10px] text-zinc-500 uppercase block mb-2">Watertight Compilation</span>
+                <span className="text-3xl md:text-4xl font-bold text-emerald-500">100% Solid</span>
               </div>
             </div>
 
