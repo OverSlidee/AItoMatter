@@ -7,7 +7,6 @@ import {
   Layers, 
   Cpu, 
   Sparkles, 
-  ChevronRight, 
   Activity, 
   Gauge,
   Binary 
@@ -37,26 +36,32 @@ export default function LandingPage() {
   // Beat 0: Intro (0.0 to 0.12)
   const opacity0 = useTransform(scrollYProgress, [0.0, 0.08, 0.12], [1, 1, 0]);
   const y0 = useTransform(scrollYProgress, [0.0, 0.08, 0.12], [0, 0, -40]);
+  const blur0 = useTransform(scrollYProgress, [0.0, 0.08, 0.12], ["blur(0px)", "blur(0px)", "blur(12px)"]);
 
   // Beat 1: Aether Reveal (0.12 to 0.32)
   const opacity1 = useTransform(scrollYProgress, [0.10, 0.16, 0.28, 0.32], [0, 1, 1, 0]);
   const y1 = useTransform(scrollYProgress, [0.10, 0.16, 0.28, 0.32], [40, 0, 0, -40]);
+  const blur1 = useTransform(scrollYProgress, [0.10, 0.16, 0.28, 0.32], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
 
   // Beat 2: Ingest (0.32 to 0.50)
   const opacity2 = useTransform(scrollYProgress, [0.30, 0.36, 0.46, 0.50], [0, 1, 1, 0]);
   const y2 = useTransform(scrollYProgress, [0.30, 0.36, 0.46, 0.50], [40, 0, 0, -40]);
+  const blur2 = useTransform(scrollYProgress, [0.30, 0.36, 0.46, 0.50], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
 
   // Beat 3: Physics (0.50 to 0.68)
   const opacity3 = useTransform(scrollYProgress, [0.48, 0.54, 0.64, 0.68], [0, 1, 1, 0]);
   const y3 = useTransform(scrollYProgress, [0.48, 0.54, 0.64, 0.68], [40, 0, 0, -40]);
+  const blur3 = useTransform(scrollYProgress, [0.48, 0.54, 0.64, 0.68], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
 
   // Beat 4: Kinematics (0.68 to 0.84)
   const opacity4 = useTransform(scrollYProgress, [0.66, 0.72, 0.80, 0.84], [0, 1, 1, 0]);
   const y4 = useTransform(scrollYProgress, [0.66, 0.72, 0.80, 0.84], [40, 0, 0, -40]);
+  const blur4 = useTransform(scrollYProgress, [0.66, 0.72, 0.80, 0.84], ["blur(12px)", "blur(0px)", "blur(0px)", "blur(12px)"]);
 
   // Beat 5: Workspace (0.84 to 1.0)
   const opacity5 = useTransform(scrollYProgress, [0.82, 0.88, 1.0], [0, 1, 1]);
   const y5 = useTransform(scrollYProgress, [0.82, 0.88, 1.0], [40, 0, 0]);
+  const blur5 = useTransform(scrollYProgress, [0.82, 0.88, 1.0], ["blur(12px)", "blur(0px)", "blur(0px)"]);
 
   // Pointer event mappings to prevent background overlay clicks when hidden
   const pointer0 = useTransform(opacity0, (v) => v > 0.15 ? "auto" : "none");
@@ -114,6 +119,11 @@ export default function LandingPage() {
     };
   }, [scrollYProgress]);
 
+  // Metallic Text Shadow for readability over glowing video core
+  const metallicShadow = {
+    textShadow: "0 0 35px rgba(0,0,0,0.95), 0 4px 12px rgba(0,0,0,0.85)"
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-screen text-zinc-100 relative bg-[#09090b]">
       
@@ -144,22 +154,22 @@ export default function LandingPage() {
           </Link>
           
           <nav className="hidden md:flex items-center space-x-8 text-[10px] font-mono tracking-widest text-zinc-400">
-            <button onClick={() => scrollToSection(0.0)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
+            <button onClick={() => scrollToSection(0.0)} className="hover:text-amber-550 transition-colors uppercase cursor-pointer">
               Intro
             </button>
-            <button onClick={() => scrollToSection(0.22)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
+            <button onClick={() => scrollToSection(0.22)} className="hover:text-amber-550 transition-colors uppercase cursor-pointer">
               Aether
             </button>
-            <button onClick={() => scrollToSection(0.41)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
+            <button onClick={() => scrollToSection(0.41)} className="hover:text-amber-550 transition-colors uppercase cursor-pointer">
               01 / Ingest
             </button>
-            <button onClick={() => scrollToSection(0.59)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
+            <button onClick={() => scrollToSection(0.59)} className="hover:text-amber-550 transition-colors uppercase cursor-pointer">
               02 / Audit
             </button>
-            <button onClick={() => scrollToSection(0.77)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
+            <button onClick={() => scrollToSection(0.77)} className="hover:text-amber-550 transition-colors uppercase cursor-pointer">
               03 / Solver
             </button>
-            <button onClick={() => scrollToSection(0.95)} className="hover:text-amber-500 transition-colors uppercase cursor-pointer">
+            <button onClick={() => scrollToSection(0.95)} className="hover:text-amber-550 transition-colors uppercase cursor-pointer">
               04 / Workspace
             </button>
           </nav>
@@ -176,156 +186,169 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* FIXED 3D VIDEO VIEWPORT CONTAINER */}
-      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none flex items-center justify-center lg:justify-end overflow-hidden">
-        <div className="w-full h-full lg:w-1/2 relative lg:mr-16 flex items-center justify-center pt-16 lg:pt-0">
-          <div className="absolute w-[80vw] h-[80vw] lg:w-[42vw] lg:h-[42vw] rounded-full border border-zinc-900/40 pointer-events-none z-0 animate-spin-slow opacity-30" />
-          <div className="absolute w-[60vw] h-[60vw] lg:w-[32vw] lg:h-[32vw] rounded-full border border-dashed border-amber-500/10 pointer-events-none z-0 animate-pulse-slow" />
-          
-          <video
-            ref={videoRef}
-            src="/neural_core.mp4"
-            preload="auto"
-            muted
-            playsInline
-            className="w-full max-h-[75vh] object-contain relative z-10 opacity-80 mix-blend-screen"
-            style={{ filter: "contrast(1.15) brightness(0.95)" }}
-          />
-        </div>
+      {/* FULL-SCREEN FIXED VIDEO CONTAINER */}
+      <div className="fixed inset-0 w-screen h-screen z-0 pointer-events-none flex items-center justify-center overflow-hidden bg-[#09090b]">
+        {/* HUD backdrop elements centered under the video */}
+        <div className="absolute w-[95vw] h-[95vw] lg:w-[60vw] lg:h-[60vw] rounded-full border border-zinc-900/35 pointer-events-none z-0 animate-spin-slow opacity-25" />
+        <div className="absolute w-[75vw] h-[75vw] lg:w-[45vw] lg:h-[45vw] rounded-full border border-dashed border-amber-500/5 pointer-events-none z-0 animate-pulse-slow" />
+        
+        <video
+          ref={videoRef}
+          src="/neural_core.mp4"
+          preload="auto"
+          muted
+          playsInline
+          className="w-full h-full object-contain relative z-10 opacity-70 mix-blend-screen"
+          style={{ filter: "contrast(1.15) brightness(0.95)" }}
+        />
       </div>
 
-      {/* FIXED SCROLLYTELLING OVERLAY CONTAINER */}
-      <div className="fixed inset-0 flex items-center z-10 pointer-events-none">
-        <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      {/* CENTERED FIXED SCROLLYTELLING OVERLAY CONTAINER */}
+      <div className="fixed inset-0 flex items-center justify-center z-10 pointer-events-none">
+        <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center justify-center text-center relative min-h-[450px]">
           
-          {/* Left Text overlay column */}
-          <div className="lg:col-span-6 flex flex-col justify-center min-h-[450px] relative mt-16 lg:mt-0">
+          {/* Beat 0: Intro */}
+          <motion.div 
+            style={{ opacity: opacity0, y: y0, filter: blur0, pointerEvents: pointer0 }} 
+            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
+          >
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[10px] font-mono shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              <span>COMPUTATIONAL ENGINEERING EXPERIMENT</span>
+            </div>
+            <h1 
+              style={metallicShadow}
+              className="text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+            >
+              INTRODUCED BY VELOLABS
+            </h1>
+            <p className="text-zinc-400 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-lg">
+              SCROLL TO DECONSTRUCT THE CORE &amp; EXPLORE PLATFORM CAPABILITIES.
+            </p>
+          </motion.div>
+
+          {/* Beat 1: Aether Reveal */}
+          <motion.div 
+            style={{ opacity: opacity1, y: y1, filter: blur1, pointerEvents: pointer1 }} 
+            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
+          >
+            <div className="text-zinc-550 font-mono text-[9px] tracking-[0.3em] uppercase">SYSTEM / ARCHITECTURE</div>
+            <h2 
+              style={metallicShadow}
+              className="text-4xl md:text-7xl font-black tracking-[0.25em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+            >
+              AETHER
+            </h2>
+            <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+              OUR CUSTOM COMPUTATIONAL ENGINEERING ENGINE. TRANSLATING RAW ARTIFICIAL INTELLIGENCE DIRECTLY INTO WATERTIGHT PHYSICAL MATTER.
+            </p>
+          </motion.div>
+
+          {/* Beat 2: Capability 1 - Ingest */}
+          <motion.div 
+            style={{ opacity: opacity2, y: y2, filter: blur2, pointerEvents: pointer2 }} 
+            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
+          >
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
+              <Binary className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              <span>CAPABILITY 01</span>
+            </div>
+            <h2 
+              style={metallicShadow}
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+            >
+              INGEST DATASHEETS
+            </h2>
+            <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+              UPLOAD MANUFACTURER PDF SPECIFICATIONS OR TYPE SIMPLE MECHANICAL REQUIREMENTS. AETHER INSTANTLY PARSES PRECISION BOUNDARIES AND FORCE LOADS.
+            </p>
+          </motion.div>
+
+          {/* Beat 3: Capability 2 - Audits */}
+          <motion.div 
+            style={{ opacity: opacity3, y: y3, filter: blur3, pointerEvents: pointer3 }} 
+            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
+          >
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
+              <Activity className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              <span>CAPABILITY 02</span>
+            </div>
+            <h2 
+              style={metallicShadow}
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+            >
+              PHYSICS AUDITS
+            </h2>
+            <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+              EVALUATES MECHANICAL STRAIN UNDER TORQUE LOAD. THE MODEL AUTOMATICALLY REINFORCES STRUCTURES AND THICKENS CASES TO ENFORCE OVERRIDE LIMITS.
+            </p>
+          </motion.div>
+
+          {/* Beat 4: Capability 3 - Kinematics */}
+          <motion.div 
+            style={{ opacity: opacity4, y: y4, filter: blur4, pointerEvents: pointer4 }} 
+            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
+          >
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
+              <Cpu className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              <span>CAPABILITY 03</span>
+            </div>
+            <h2 
+              style={metallicShadow}
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+            >
+              KINEMATIC SOLVER
+            </h2>
+            <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-xl">
+              VERIFIES ROTATIONAL CLEARANCES AND CLOSED-LOOP TRANSMISSION LINKAGES. ENSURES ALL MOVING JOINTS SWING FREELY WITHOUT COLLISION.
+            </p>
+          </motion.div>
+
+          {/* Beat 5: Workspace CTA & Stats */}
+          <motion.div 
+            style={{ opacity: opacity5, y: y5, filter: blur5, pointerEvents: pointer5 }} 
+            className="space-y-6 absolute flex flex-col items-center justify-center w-full px-4"
+          >
+            <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
+              <Gauge className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              <span>CEM PRODUCTION TELEMETRY</span>
+            </div>
+            <h2 
+              style={metallicShadow}
+              className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase"
+            >
+              04 / WORKSPACE
+            </h2>
             
-            {/* Beat 0: Intro */}
-            <motion.div 
-              style={{ opacity: opacity0, y: y0, pointerEvents: pointer0 }} 
-              className="space-y-4 absolute inset-x-0 pr-4 lg:pr-8"
-            >
-              <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-4 py-1.5 rounded-full text-amber-550 text-[10px] font-mono shadow-sm">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>COMPUTATIONAL ENGINEERING EXPERIMENT</span>
+            <div className="grid grid-cols-3 gap-4 font-mono text-[9px] w-full max-w-md">
+              <div className="glass-panel p-3 rounded border border-zinc-850">
+                <span className="text-zinc-550 block mb-1 uppercase">Solves Speed</span>
+                <span className="text-sm font-bold text-amber-550">0.08 s</span>
               </div>
-              <h1 className="text-4xl md:text-6xl font-extrabold tracking-[0.2em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase">
-                INTRODUCED BY VELOLABS
-              </h1>
-              <p className="text-zinc-400 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-md">
-                SCROLL TO DECONSTRUCT THE CORE &amp; EXPLORE PLATFORM CAPABILITIES.
-              </p>
-            </motion.div>
-
-            {/* Beat 1: Aether Reveal */}
-            <motion.div 
-              style={{ opacity: opacity1, y: y1, pointerEvents: pointer1 }} 
-              className="space-y-4 absolute inset-x-0 pr-4 lg:pr-8"
-            >
-              <div className="text-zinc-500 font-mono text-[9px] tracking-[0.3em] uppercase">SYSTEM / ARCHITECTURE</div>
-              <h2 className="text-4xl md:text-6xl font-black tracking-[0.25em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase">
-                AETHER
-              </h2>
-              <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-md">
-                OUR CUSTOM COMPUTATIONAL ENGINEERING ENGINE. TRANSLATING RAW ARTIFICIAL INTELLIGENCE DIRECTLY INTO WATERTIGHT PHYSICAL MATTER.
-              </p>
-            </motion.div>
-
-            {/* Beat 2: Capability 1 - Ingest */}
-            <motion.div 
-              style={{ opacity: opacity2, y: y2, pointerEvents: pointer2 }} 
-              className="space-y-4 absolute inset-x-0 pr-4 lg:pr-8"
-            >
-              <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-                <Binary className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>CAPABILITY 01</span>
+              <div className="glass-panel p-3 rounded border border-zinc-850">
+                <span className="text-zinc-550 block mb-1 uppercase">Training Corpus</span>
+                <span className="text-sm font-bold text-zinc-300">2.8M CAD</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase">
-                INGEST DATASHEETS
-              </h2>
-              <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-md">
-                UPLOAD MANUFACTURER PDF SPECIFICATIONS OR TYPE SIMPLE MECHANICAL REQUIREMENTS. AETHER INSTANTLY PARSES PRECISION BOUNDARIES AND FORCE LOADS.
-              </p>
-            </motion.div>
-
-            {/* Beat 3: Capability 2 - Audits */}
-            <motion.div 
-              style={{ opacity: opacity3, y: y3, pointerEvents: pointer3 }} 
-              className="space-y-4 absolute inset-x-0 pr-4 lg:pr-8"
-            >
-              <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-                <Activity className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>CAPABILITY 02</span>
+              <div className="glass-panel p-3 rounded border border-zinc-850">
+                <span className="text-zinc-550 block mb-1 uppercase">Manifold</span>
+                <span className="text-sm font-bold text-emerald-500">100% Solid</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase">
-                PHYSICS AUDITS
-              </h2>
-              <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-md">
-                EVALUATES MECHANICAL STRAIN UNDER TORQUE LOAD. THE MODEL AUTOMATICALLY REINFORCES STRUCTURES AND THICKENS CASES TO ENFORCE OVERRIDE LIMITS.
-              </p>
-            </motion.div>
+            </div>
 
-            {/* Beat 4: Capability 3 - Kinematics */}
-            <motion.div 
-              style={{ opacity: opacity4, y: y4, pointerEvents: pointer4 }} 
-              className="space-y-4 absolute inset-x-0 pr-4 lg:pr-8"
-            >
-              <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-                <Cpu className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>CAPABILITY 03</span>
+            <div className="space-y-4 pt-2 pointer-events-auto">
+              <Link
+                href="/workspace"
+                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-4 px-10 rounded shadow-md transition-all flex items-center justify-center space-x-3 cursor-pointer"
+              >
+                <span>LAUNCH COMPILER WORKSPACE</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <div className="text-[9px] font-mono text-zinc-650 uppercase tracking-wider">
+                &copy; {new Date().getFullYear()} VeloLabs. AI TO MATTER COMPILER PIPELINE.
               </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase">
-                KINEMATIC SOLVER
-              </h2>
-              <p className="text-zinc-300 text-xs font-mono tracking-[0.2em] uppercase leading-relaxed max-w-md">
-                VERIFIES ROTATIONAL CLEARANCES AND CLOSED-LOOP TRANSMISSION LINKAGES. ENSURES ALL MOVING JOINTS SWING FREELY WITHOUT COLLISION.
-              </p>
-            </motion.div>
+            </div>
+          </motion.div>
 
-            {/* Beat 5: Workspace CTA & Stats */}
-            <motion.div 
-              style={{ opacity: opacity5, y: y5, pointerEvents: pointer5 }} 
-              className="space-y-6 absolute inset-x-0 pr-4 lg:pr-8"
-            >
-              <div className="inline-flex items-center space-x-2 bg-zinc-900/60 border border-zinc-850 px-3 py-1 rounded text-amber-550 text-[10px] font-mono">
-                <Gauge className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>CEM PRODUCTION TELEMETRY</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-[0.18em] leading-none text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 via-zinc-400 to-zinc-200 uppercase">
-                04 / WORKSPACE
-              </h2>
-              
-              <div className="grid grid-cols-3 gap-3 font-mono text-[9px]">
-                <div className="glass-panel p-3 rounded border border-zinc-850">
-                  <span className="text-zinc-550 block mb-1 uppercase">Solves Speed</span>
-                  <span className="text-sm font-bold text-amber-550">0.08 s</span>
-                </div>
-                <div className="glass-panel p-3 rounded border border-zinc-850">
-                  <span className="text-zinc-550 block mb-1 uppercase">Training Corpus</span>
-                  <span className="text-sm font-bold text-zinc-300">2.8M CAD</span>
-                </div>
-                <div className="glass-panel p-3 rounded border border-zinc-850">
-                  <span className="text-zinc-550 block mb-1 uppercase">Manifold</span>
-                  <span className="text-sm font-bold text-emerald-500">100% Solid</span>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-2 pointer-events-auto">
-                <Link
-                  href="/workspace"
-                  className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs py-4 px-10 rounded shadow-md transition-all flex items-center justify-center space-x-3 cursor-pointer"
-                >
-                  <span>LAUNCH COMPILER WORKSPACE</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <div className="text-[9px] font-mono text-zinc-650 uppercase tracking-wider">
-                  &copy; {new Date().getFullYear()} VeloLabs. AI TO MATTER COMPILER PIPELINE.
-                </div>
-              </div>
-            </motion.div>
-
-          </div>
         </div>
       </div>
 
