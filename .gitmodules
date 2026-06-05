@@ -1,0 +1,6 @@
+[submodule "cem/ShapeKernel"]
+	path = cem/ShapeKernel
+	url = https://github.com/leap71/LEAP71_ShapeKernel.git
+[submodule "cem/LatticeLibrary"]
+	path = cem/LatticeLibrary
+	url = https://github.com/leap71/LEAP71_LatticeLibrary.git

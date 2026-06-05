@@ -23,6 +23,11 @@ try:
     print(stdout.read().decode('utf-8'))
     print(stderr.read().decode('utf-8'))
     
+    print("=== UPDATING GIT SUBMODULES ===")
+    stdin, stdout, stderr = ssh.exec_command("cd /home/username/AItoMatter && git submodule update --init --recursive")
+    print(stdout.read().decode('utf-8'))
+    print(stderr.read().decode('utf-8'))
+    
     # 1b. Install dependencies
     print("=== INSTALLING DEPENDENCIES ===")
     stdin, stdout, stderr = ssh.exec_command("cd /home/username/AItoMatter && PATH=/home/username/.nvm/versions/node/v22.22.2/bin:$PATH npm install --legacy-peer-deps")
