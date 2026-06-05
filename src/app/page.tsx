@@ -194,7 +194,7 @@ export default function LandingPage() {
       }
 
       if (frameRef.current) {
-        const frameIndex = Math.floor(boundedTime * 30); // 30 fps for standard frame indices
+        const frameIndex = Math.floor(boundedTime * 60); // 60 fps for interpolated high-fidelity frames
         frameRef.current.innerText = `FR / ${frameIndex.toString().padStart(3, '0')}`;
       }
 
