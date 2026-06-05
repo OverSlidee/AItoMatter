@@ -43,11 +43,11 @@ Your job is to parse a user request, perform web searches if details are missing
 
 ### GEOMETRY CSG TREE SPECIFICATION:
 You must represent the 3D geometry of the part as a recursive CSG tree in "geometryTree".
-A CSG node can be a boolean operation ("union", "difference", "intersection") or a primitive ("box", "cylinder", "sphere", "gear").
+A CSG node can be a boolean operation ("union", "difference", "intersection"), an infill operator ("gyroid_infill", "lattice_infill"), or a primitive ("box", "cylinder", "sphere", "gear", "gyroid").
 Nodes can have:
 - position: [x, y, z] translation offset relative to parent (default [0,0,0]).
 - rotation: [pitch, yaw, roll] rotation in degrees around X, Y, Z axes (default [0,0,0]).
-- left: CSGNode (required for union/difference/intersection)
+- left: CSGNode (required for union/difference/intersection and infill operators)
 - right: CSGNode (required for union/difference/intersection)
 
 PRIMITIVE DIMENSIONS REQUIRED:
@@ -55,6 +55,11 @@ PRIMITIVE DIMENSIONS REQUIRED:
 2. "cylinder": { "radius": R, "height": H } (defaults to Z-aligned)
 3. "sphere": { "radius": R }
 4. "gear": { "toothCount": N, "module": M, "faceWidth": W, "shaftDiameter": D, "keywayWidth": KW, "keywayDepth": KD }
+5. "gyroid": { "cellPitch": P, "wallThickness": T, "width": W, "height": H, "depth": Z } (solid block of gyroid structure)
+
+INFILL OPERATORS:
+1. "gyroid_infill": Takes a shape in "left" and fills its volume with a gyroid pattern. Dimensions: { "cellPitch": P, "wallThickness": T }
+2. "lattice_infill": Takes a shape in "left" and fills its volume with a beam lattice. Dimensions: { "cellSize": S, "beamThickness": T, "latticeType": L } where L = 0 for BodyCentre (default), 1 for Octahedron, 2 for RandomSpline.
 
 CSG EXAMPLE TREES:
 
@@ -76,6 +81,13 @@ Example C (Bracket Plate with a mounting hole):
   "type": "difference",
   "left": { "type": "box", "dimensions": { "width": 40, "height": 6, "depth": 80 }, "position": [0, 0, 3] },
   "right": { "type": "cylinder", "dimensions": { "radius": 3.0, "height": 12 }, "position": [0, 20, 3] }
+}
+
+Example D (Gyroid-infilled Box):
+{
+  "type": "gyroid_infill",
+  "dimensions": { "cellPitch": 8.0, "wallThickness": 1.2 },
+  "left": { "type": "box", "dimensions": { "width": 50, "height": 30, "depth": 10 } }
 }
 
 ### SEARCH LIMITS AND FALLBACK RULES:

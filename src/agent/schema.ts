@@ -2,12 +2,15 @@ import { z } from "zod";
 
 // Recursive CSG (Constructive Solid Geometry) Node Schema
 export interface CSGNode {
-  type: "box" | "cylinder" | "sphere" | "gear" | "union" | "difference" | "intersection";
+  type: "box" | "cylinder" | "sphere" | "gear" | "union" | "difference" | "intersection" | "gyroid" | "gyroid_infill" | "lattice_infill";
   dimensions?: {
     // Box: width, height, depth
     // Cylinder: radius, height
     // Sphere: radius
     // Gear: toothCount, module, faceWidth, shaftDiameter, keywayWidth, keywayDepth
+    // Gyroid: cellPitch, wallThickness, width, height, depth
+    // Gyroid Infill: cellPitch, wallThickness
+    // Lattice Infill: cellSize, beamThickness, latticeType (0 = BodyCentre, 1 = Octahedron, 2 = RandomSpline)
     [key: string]: number;
   };
   position?: [number, number, number]; // [x, y, z] center translation offset in mm
@@ -18,7 +21,7 @@ export interface CSGNode {
 
 export const CSGNodeSchema: z.ZodType<CSGNode> = z.lazy(() =>
   z.object({
-    type: z.enum(["box", "cylinder", "sphere", "gear", "union", "difference", "intersection"]),
+    type: z.enum(["box", "cylinder", "sphere", "gear", "union", "difference", "intersection", "gyroid", "gyroid_infill", "lattice_infill"]),
     dimensions: z.record(z.string(), z.number()).optional(),
     position: z.tuple([z.number(), z.number(), z.number()]).optional(),
     rotation: z.tuple([z.number(), z.number(), z.number()]).optional(),

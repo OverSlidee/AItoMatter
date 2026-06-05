@@ -2,6 +2,8 @@ using System;
 using System.Numerics;
 using System.Collections.Generic;
 using PicoGK;
+using Leap71.ShapeKernel;
+using Leap71.LatticeLibrary;
 
 namespace VeloLabs.CEM
 {
@@ -127,6 +129,28 @@ namespace VeloLabs.CEM
                 left.BoolIntersect(right);
                 return left;
             }
+            else if (type == "gyroid_infill")
+            {
+                Voxels left = EvaluateNode(node.Left!);
+                float cellPitch = (float)GetDim(node.Dimensions, "cellPitch", 5.0);
+                float wallThickness = (float)GetDim(node.Dimensions, "wallThickness", 1.0);
+
+                float ratio = ImplicitGyroid.fGetThicknessRatio(wallThickness, cellPitch);
+                ImplicitGyroid gyroid = new ImplicitGyroid(cellPitch, ratio);
+
+                Voxels infill = left.voxIntersectImplicit(gyroid);
+                return infill;
+            }
+            else if (type == "lattice_infill")
+            {
+                Voxels left = EvaluateNode(node.Left!);
+                float cellSize = (float)GetDim(node.Dimensions, "cellSize", 15.0);
+                float beamThickness = (float)GetDim(node.Dimensions, "beamThickness", 1.5);
+                double latticeType = GetDim(node.Dimensions, "latticeType", 0.0);
+
+                Voxels lattice = BuildLattice(left, cellSize, beamThickness, latticeType);
+                return lattice;
+            }
 
             // Primitive parameters resolver
             Vector3 pos = Vector3.Zero;
@@ -171,6 +195,20 @@ namespace VeloLabs.CEM
                 ImplicitSphere sdf = new ImplicitSphere(pos, r);
                 BBox3 bbox = new BBox3(pos - new Vector3(r + 1.0f), pos + new Vector3(r + 1.0f));
                 prim.RenderImplicit(sdf, bbox);
+            }
+            else if (type == "gyroid")
+            {
+                float cellPitch = (float)GetDim(node.Dimensions, "cellPitch", 5.0);
+                float wallThickness = (float)GetDim(node.Dimensions, "wallThickness", 1.0);
+                float w = (float)GetDim(node.Dimensions, "width", 20.0);
+                float h = (float)GetDim(node.Dimensions, "height", 20.0);
+                float d = (float)GetDim(node.Dimensions, "depth", 20.0);
+
+                float ratio = ImplicitGyroid.fGetThicknessRatio(wallThickness, cellPitch);
+                ImplicitGyroid gyroid = new ImplicitGyroid(cellPitch, ratio);
+
+                BBox3 bbox = new BBox3(pos - new Vector3(w/2.0f, h/2.0f, d/2.0f), pos + new Vector3(w/2.0f, h/2.0f, d/2.0f));
+                prim.RenderImplicit(gyroid, bbox);
             }
             else if (type == "gear")
             {
@@ -378,6 +416,47 @@ namespace VeloLabs.CEM
             }
 
             return local;
+        }
+
+        private static Voxels BuildLattice(Voxels voxBounding, float cellSize, float beamThickness, double latticeType)
+        {
+            // Step 1: define cell array
+            float fNoiseLevel = 0.0f; // Keep regular for engineering precision
+            ICellArray xCellArray = new RegularCellArray(
+                voxBounding, cellSize, cellSize, cellSize, fNoiseLevel);
+
+            // Step 2: define lattice type
+            ILatticeType xLatticeType;
+            if (latticeType == 1.0)
+            {
+                xLatticeType = new OctahedronLattice();
+            }
+            else if (latticeType == 2.0)
+            {
+                xLatticeType = new RandomSplineLattice();
+            }
+            else
+            {
+                xLatticeType = new BodyCentreLattice();
+            }
+
+            // Step 3: define beam thickness
+            IBeamThickness xBeamThickness = new ConstantBeamThickness(beamThickness);
+            xBeamThickness.SetBoundingVoxels(voxBounding);
+
+            // Step 4: generate lattice geometry
+            uint nSubSample = 3;
+            Lattice oLattice = new Lattice();
+            foreach (IUnitCell xCell in xCellArray.aGetUnitCells())
+            {
+                xBeamThickness.UpdateCell(xCell);
+                xLatticeType.AddCell(ref oLattice, xCell, xBeamThickness, nSubSample);
+            }
+            Voxels voxLattice = new Voxels(oLattice);
+
+            // Step 5: Crop to bounding box
+            voxLattice.BoolIntersect(voxBounding);
+            return voxLattice;
         }
     }
 
