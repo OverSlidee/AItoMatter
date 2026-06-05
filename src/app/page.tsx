@@ -22,7 +22,7 @@ import { motion, useScroll, useSpring } from "framer-motion";
 
 export default function LandingPage() {
   const threeRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"gear" | "bracket" | "pipe" | "housing" >("gear");
+  const [activeTab, setActiveTab] = useState<"voxel" | "optimized" | "linkages" | "production">("voxel");
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
   
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -59,31 +59,31 @@ export default function LandingPage() {
     restDelta: 0.001
   });
 
-  // Presets mapping to prompts
+  // Presets mapping to prompts (Bionic Alien Machine Part generations)
   const presets = {
-    gear: {
-      title: "Spur Gear",
-      desc: "Compile mechanical spur gears with customized tooth configurations, module width, and keyed shaft bores.",
-      prompt: "Design a spur gear with 24 teeth, module 2.5, face width 20mm, and a 12mm shaft bore with a standard 3mm keyway, made of SLM Titanium.",
-      spec: "Module: 2.5 | Teeth: 24 | Material: Titanium"
+    voxel: {
+      title: "Gen 1: Voxel Lattice",
+      desc: "Raw spatial topological synthesis. Generates the core load-bearing lattice structure based on localized strain profiles.",
+      prompt: "Synthesize organic structural lattice for a 12-DoF quadruped knee roll joint, optimize for 400N torque, resolution 100um.",
+      spec: "Lattice Nodes: 1,420 | Resolution: 100µm"
     },
-    bracket: {
-      title: "Cantilever Bracket",
-      desc: "Build load-bearing mounting brackets customized for specific load weights, bolt spacings, and thicknesses.",
-      prompt: "Design a structural cantilever bracket supporting a 600N vertical shear load. Base dimensions: width 50mm, length 90mm, thickness 6mm, with two 6mm bolt holes spaced 35mm apart.",
-      spec: "Load: 600 N | Thickness: 6mm | Material: SLM Steel"
+    optimized: {
+      title: "Gen 2: Stress Shell",
+      desc: "Finite Element stress analysis shell generation. Wraps the lattice in a variable-thickness protective exoskeleton.",
+      prompt: "Generate adaptive variable-thickness protective shell over knee roll joint lattice, thicken stress-concentration nodes.",
+      spec: "Thickness: 1.2 - 4.5mm | Stress Limit: 320MPa"
     },
-    pipe: {
-      title: "Fluid Junction Pipe",
-      desc: "Assemble watertight fluid pipes and manifolds with physics audits for internal hoop stress thresholds.",
-      prompt: "Design a high-pressure fluid pipe junction. Bore diameter 32mm, wall thickness 4mm, total length 150mm. Grade: FDM Plastic, verified for 120 PSI internal flow.",
-      spec: "Bore: 32mm | Max Pressure: 120 PSI | Material: PLA Plastic"
+    linkages: {
+      title: "Gen 3: Kinematic Linkages",
+      desc: "Integration of quasi-direct drive (QDD) mounts, hydraulic pistons, and closed-loop bionic transmission linkages.",
+      prompt: "Integrate QDD motor flange mounts and dual closed-loop hydraulic linkages for abduction joint flexion clearance.",
+      spec: "Joint Type: Closed-loop | DoF: 3 per leg"
     },
-    housing: {
-      title: "Motor Housing Faceplate",
-      desc: "Generate custom mounts and motor faceplates aligning with standard NEMA dimensions and tolerances.",
-      prompt: "Design a NEMA 17 motor housing plate. Bolt spacing 31mm, pilot diameter 22mm, pilot depth 2mm, main body thickness 8mm with a 5mm central shaft clearance bore.",
-      spec: "NEMA 17 Compatible | Pilot: 22mm | Material: SLA Resin"
+    production: {
+      title: "Gen 4: Production 3MF",
+      desc: "Final watertight solid voxel compilation. Unifies all structural layers into a single manifold print-ready file.",
+      prompt: "Compile combined bionic knee joint assembly into watertight production-ready 3MF file format, optimized for SLM Titanium.",
+      spec: "Manifold: 100% Watertight | Material: Titanium"
     }
   };
 
@@ -152,15 +152,15 @@ export default function LandingPage() {
 
     // Material system - Industrial dark metal & copper accents
     const metalMat = new THREE.MeshStandardMaterial({
-      color: 0x3f3f46, // Zinc steel
-      metalness: 0.85,
+      color: 0x27272a, // Obsidian Titanium (dark gray/black)
+      metalness: 0.9,
       roughness: 0.22
     });
     
     const brassMat = new THREE.MeshStandardMaterial({
-      color: 0xca8a04, // Rich brass
-      metalness: 0.8,
-      roughness: 0.2
+      color: 0xd97706, // Rich brass/gold
+      metalness: 0.85,
+      roughness: 0.25
     });
 
     const accentMat = new THREE.MeshStandardMaterial({
@@ -170,350 +170,223 @@ export default function LandingPage() {
     });
 
     const glowMat = new THREE.MeshBasicMaterial({
-      color: 0xca8a04, // Warm translucent boundary ring
+      color: 0xd97706, // Translucent warm orange/amber
       transparent: true,
       opacity: 0.25
     });
 
     const holeMat = new THREE.MeshBasicMaterial({
-      color: 0x09090b, // Matches scene background to simulate bored hollows
+      color: 0x09090b,
       side: THREE.DoubleSide
     });
 
-    // Populate group based on active tab
-    if (activeTab === "gear") {
-      const baseGeo = new THREE.CylinderGeometry(2.2, 2.2, 1.4, 32);
-      const baseMesh = new THREE.Mesh(baseGeo, metalMat);
-      baseMesh.userData = {
-        originalPos: baseMesh.position.clone(),
-        explodeDir: new THREE.Vector3(0, -0.3, 0),
-        explodeScale: 1.0
-      };
-      previewGroup.add(baseMesh);
+    // Material assignments based on activeTab
+    let casingMat: THREE.Material = metalMat;
+    let ribMat: THREE.Material = metalMat;
+    let coreMat: THREE.Material = metalMat;
+    let ringMat: THREE.Material = metalMat;
+    let latticeMat: THREE.Material = metalMat;
+    let sleeveMat: THREE.Material = metalMat;
+    let rodMat: THREE.Material = metalMat;
+    let jointMat: THREE.Material = metalMat;
 
-      const collarGeo = new THREE.CylinderGeometry(1.3, 1.3, 2.6, 32);
-      const collarMesh = new THREE.Mesh(collarGeo, accentMat);
-      collarMesh.userData = {
-        originalPos: collarMesh.position.clone(),
-        explodeDir: new THREE.Vector3(0, 1.5, 0),
-        explodeScale: 1.0
-      };
-      previewGroup.add(collarMesh);
-
-      const boreGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.8, 32);
-      const boreMesh = new THREE.Mesh(boreGeo, holeMat);
-      boreMesh.userData = {
-        originalPos: boreMesh.position.clone(),
-        explodeDir: new THREE.Vector3(0, -1.8, 0),
-        explodeScale: 1.0
-      };
-      previewGroup.add(boreMesh);
-
-      const toothCount = 18;
-      const toothGeo = new THREE.BoxGeometry(0.4, 1.4, 0.6);
-      for (let i = 0; i < toothCount; i++) {
-        const angle = (i * 2 * Math.PI) / toothCount;
-        const tooth = new THREE.Mesh(toothGeo, metalMat);
-        tooth.position.set(Math.cos(angle) * 2.3, 0, Math.sin(angle) * 2.3);
-        tooth.rotation.y = -angle;
-        tooth.userData = {
-          originalPos: tooth.position.clone(),
-          explodeDir: new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle)),
-          explodeScale: 1.5
-        };
-        previewGroup.add(tooth);
-      }
-
-      const ringGeo = new THREE.TorusGeometry(4.0, 0.08, 8, 48);
-      ringGeo.rotateX(Math.PI / 2);
-      const ringMesh = new THREE.Mesh(ringGeo, glowMat);
-      ringMesh.userData = {
-        originalPos: ringMesh.position.clone(),
-        isGlowRing: true,
-        originalScale: 1.0,
-        explodeDir: new THREE.Vector3(0, 0, 0)
-      };
-      previewGroup.add(ringMesh);
-
-    } else if (activeTab === "bracket") {
-      const backGeo = new THREE.BoxGeometry(0.4, 4.2, 2.4);
-      const backMesh = new THREE.Mesh(backGeo, metalMat);
-      backMesh.position.set(-1.8, 0.8, 0);
-      backMesh.userData = {
-        originalPos: backMesh.position.clone(),
-        explodeDir: new THREE.Vector3(-1.2, 0, 0),
-        explodeScale: 1.5
-      };
-      previewGroup.add(backMesh);
-
-      const baseGeo = new THREE.BoxGeometry(3.6, 0.4, 2.4);
-      const baseMesh = new THREE.Mesh(baseGeo, metalMat);
-      baseMesh.position.set(0, -1.1, 0);
-      baseMesh.userData = {
-        originalPos: baseMesh.position.clone(),
-        explodeDir: new THREE.Vector3(0, -1.0, 0),
-        explodeScale: 1.2
-      };
-      previewGroup.add(baseMesh);
-
-      const braceGeo = new THREE.BoxGeometry(0.35, 4.0, 0.6);
-      const braceMesh = new THREE.Mesh(braceGeo, accentMat);
-      braceMesh.position.set(-0.2, 0.2, 0);
-      braceMesh.rotation.z = -Math.PI / 4;
-      braceMesh.userData = {
-        originalPos: braceMesh.position.clone(),
-        explodeDir: new THREE.Vector3(1, 1, 0).normalize(),
-        explodeScale: 1.5
-      };
-      previewGroup.add(braceMesh);
-
-      const holeGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 16);
-      holeGeo.rotateZ(Math.PI / 2);
-      
-      const h1 = new THREE.Mesh(holeGeo, holeMat);
-      h1.position.set(-1.8, 2.0, 0.6);
-      h1.userData = {
-        originalPos: h1.position.clone(),
-        explodeDir: new THREE.Vector3(-1.2, 0.6, 0.6).normalize(),
-        explodeScale: 2.0
-      };
-      
-      const h2 = new THREE.Mesh(holeGeo, holeMat);
-      h2.position.set(-1.8, 2.0, -0.6);
-      h2.userData = {
-        originalPos: h2.position.clone(),
-        explodeDir: new THREE.Vector3(-1.2, 0.6, -0.6).normalize(),
-        explodeScale: 2.0
-      };
-
-      const h3 = new THREE.Mesh(holeGeo, holeMat);
-      h3.position.set(-1.8, -0.4, 0.6);
-      h3.userData = {
-        originalPos: h3.position.clone(),
-        explodeDir: new THREE.Vector3(-1.2, -0.6, 0.6).normalize(),
-        explodeScale: 2.0
-      };
-
-      const h4 = new THREE.Mesh(holeGeo, holeMat);
-      h4.position.set(-1.8, -0.4, -0.6);
-      h4.userData = {
-        originalPos: h4.position.clone(),
-        explodeDir: new THREE.Vector3(-1.2, -0.6, -0.6).normalize(),
-        explodeScale: 2.0
-      };
-
-      previewGroup.add(h1, h2, h3, h4);
-
-      const ringGeo = new THREE.TorusGeometry(3.0, 0.06, 8, 32);
-      const ringMesh = new THREE.Mesh(ringGeo, glowMat);
-      ringMesh.position.set(0.8, -1.1, 0);
-      ringMesh.rotateY(Math.PI / 2);
-      ringMesh.userData = {
-        originalPos: ringMesh.position.clone(),
-        isGlowRing: true,
-        originalScale: 1.0,
-        explodeDir: new THREE.Vector3(0, 0, 0)
-      };
-      previewGroup.add(ringMesh);
-
-    } else if (activeTab === "pipe") {
-      const vertGeo = new THREE.CylinderGeometry(0.8, 0.8, 4.2, 24);
-      const vertPipe = new THREE.Mesh(vertGeo, metalMat);
-      vertPipe.userData = {
-        originalPos: vertPipe.position.clone(),
-        explodeDir: new THREE.Vector3(0, 0, 0)
-      };
-      previewGroup.add(vertPipe);
-
-      const horizGeo = new THREE.CylinderGeometry(0.8, 0.8, 2.0, 24);
-      horizGeo.rotateZ(Math.PI / 2);
-      const horizPipe = new THREE.Mesh(horizGeo, metalMat);
-      horizPipe.position.set(1.0, 0, 0);
-      horizPipe.userData = {
-        originalPos: horizPipe.position.clone(),
-        explodeDir: new THREE.Vector3(1.2, 0, 0),
-        explodeScale: 1.4
-      };
-      previewGroup.add(horizPipe);
-
-      const flangeGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.3, 24);
-      const f1 = new THREE.Mesh(flangeGeo, accentMat);
-      f1.position.set(0, 2.1, 0);
-      f1.userData = {
-        originalPos: f1.position.clone(),
-        explodeDir: new THREE.Vector3(0, 1.4, 0),
-        explodeScale: 1.5
-      };
-
-      const f2 = new THREE.Mesh(flangeGeo, accentMat);
-      f2.position.set(0, -2.1, 0);
-      f2.userData = {
-        originalPos: f2.position.clone(),
-        explodeDir: new THREE.Vector3(0, -1.4, 0),
-        explodeScale: 1.5
-      };
-
-      const fSideGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.3, 24);
-      fSideGeo.rotateZ(Math.PI / 2);
-      const f3 = new THREE.Mesh(fSideGeo, accentMat);
-      f3.position.set(2.0, 0, 0);
-      f3.userData = {
-        originalPos: f3.position.clone(),
-        explodeDir: new THREE.Vector3(1.6, 0, 0),
-        explodeScale: 1.5
-      };
-
-      previewGroup.add(f1, f2, f3);
-
-      const boreVGeo = new THREE.CylinderGeometry(0.5, 0.5, 4.4, 24);
-      const boreV = new THREE.Mesh(boreVGeo, holeMat);
-      boreV.userData = {
-        originalPos: boreV.position.clone(),
-        explodeDir: new THREE.Vector3(0, -1.8, 0),
-        explodeScale: 1.0
-      };
-      
-      const boreHGeo = new THREE.CylinderGeometry(0.5, 0.5, 2.2, 24);
-      boreHGeo.rotateZ(Math.PI / 2);
-      const boreH = new THREE.Mesh(boreHGeo, holeMat);
-      boreH.position.set(1.0, 0, 0);
-      boreH.userData = {
-        originalPos: boreH.position.clone(),
-        explodeDir: new THREE.Vector3(1.8, 0, 0),
-        explodeScale: 1.2
-      };
-
-      previewGroup.add(boreV, boreH);
-
-      const ringGeo = new THREE.TorusGeometry(3.2, 0.06, 8, 32);
-      const ringMesh = new THREE.Mesh(ringGeo, glowMat);
-      ringMesh.rotateX(Math.PI / 4);
-      ringMesh.userData = {
-        originalPos: ringMesh.position.clone(),
-        isGlowRing: true,
-        originalScale: 1.0,
-        explodeDir: new THREE.Vector3(0, 0, 0)
-      };
-      previewGroup.add(ringMesh);
-
-    } else if (activeTab === "housing") {
-      const plateGeo = new THREE.BoxGeometry(3.8, 0.5, 3.8);
-      const plateMesh = new THREE.Mesh(plateGeo, metalMat);
-      plateMesh.userData = {
-        originalPos: plateMesh.position.clone(),
-        explodeDir: new THREE.Vector3(0, -0.8, 0),
-        explodeScale: 1.2
-      };
-      previewGroup.add(plateMesh);
-
-      const bossGeo = new THREE.CylinderGeometry(1.5, 1.5, 1.0, 32);
-      const bossMesh = new THREE.Mesh(bossGeo, accentMat);
-      bossMesh.position.set(0, 0.3, 0);
-      bossMesh.userData = {
-        originalPos: bossMesh.position.clone(),
-        explodeDir: new THREE.Vector3(0, 1.4, 0),
-        explodeScale: 1.5
-      };
-      previewGroup.add(bossMesh);
-
-      const CentralBoreGeo = new THREE.CylinderGeometry(0.65, 0.65, 1.4, 32);
-      const centralBore = new THREE.Mesh(CentralBoreGeo, holeMat);
-      centralBore.position.set(0, 0.3, 0);
-      centralBore.userData = {
-        originalPos: centralBore.position.clone(),
-        explodeDir: new THREE.Vector3(0, -1.6, 0),
-        explodeScale: 1.5
-      };
-      previewGroup.add(centralBore);
-
-      const boltGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.7, 16);
-      
-      const b1 = new THREE.Mesh(boltGeo, brassMat);
-      b1.position.set(1.4, 0.15, 1.4);
-      b1.userData = {
-        originalPos: b1.position.clone(),
-        explodeDir: new THREE.Vector3(1, 2, 1).normalize(),
-        explodeScale: 2.2
-      };
-
-      const b2 = new THREE.Mesh(boltGeo, brassMat);
-      b2.position.set(1.4, 0.15, -1.4);
-      b2.userData = {
-        originalPos: b2.position.clone(),
-        explodeDir: new THREE.Vector3(1, 2, -1).normalize(),
-        explodeScale: 2.2
-      };
-
-      const b3 = new THREE.Mesh(boltGeo, brassMat);
-      b3.position.set(-1.4, 0.15, 1.4);
-      b3.userData = {
-        originalPos: b3.position.clone(),
-        explodeDir: new THREE.Vector3(-1, 2, 1).normalize(),
-        explodeScale: 2.2
-      };
-
-      const b4 = new THREE.Mesh(boltGeo, brassMat);
-      b4.position.set(-1.4, 0.15, -1.4);
-      b4.userData = {
-        originalPos: b4.position.clone(),
-        explodeDir: new THREE.Vector3(-1, 2, -1).normalize(),
-        explodeScale: 2.2
-      };
-
-      previewGroup.add(b1, b2, b3, b4);
-
-      const holeGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 16);
-      
-      const h1 = new THREE.Mesh(holeGeo, holeMat);
-      h1.position.set(1.4, -0.1, 1.4);
-      h1.userData = {
-        originalPos: h1.position.clone(),
-        explodeDir: new THREE.Vector3(1, -2, 1).normalize(),
-        explodeScale: 2.2
-      };
-
-      const h2 = new THREE.Mesh(holeGeo, holeMat);
-      h2.position.set(1.4, -0.1, -1.4);
-      h2.userData = {
-        originalPos: h2.position.clone(),
-        explodeDir: new THREE.Vector3(1, -2, -1).normalize(),
-        explodeScale: 2.2
-      };
-
-      const h3 = new THREE.Mesh(holeGeo, holeMat);
-      h3.position.set(-1.4, -0.1, 1.4);
-      h3.userData = {
-        originalPos: h3.position.clone(),
-        explodeDir: new THREE.Vector3(-1, -2, 1).normalize(),
-        explodeScale: 2.2
-      };
-
-      const h4 = new THREE.Mesh(holeGeo, holeMat);
-      h4.position.set(-1.4, -0.1, -1.4);
-      h4.userData = {
-        originalPos: h4.position.clone(),
-        explodeDir: new THREE.Vector3(-1, -2, -1).normalize(),
-        explodeScale: 2.2
-      };
-
-      previewGroup.add(h1, h2, h3, h4);
-
-      const wireGeo = new THREE.BoxGeometry(4.2, 1.1, 4.2);
-      const wireMat = new THREE.MeshBasicMaterial({
-        color: 0xca8a04,
+    if (activeTab === "voxel") {
+      casingMat = new THREE.MeshBasicMaterial({
+        color: 0x3f3f46,
         wireframe: true,
         transparent: true,
-        opacity: 0.12
+        opacity: 0.15
       });
-      const wireMesh = new THREE.Mesh(wireGeo, wireMat);
-      wireMesh.userData = {
-        originalPos: wireMesh.position.clone(),
-        isGlowRing: true,
-        originalScale: 1.0,
-        explodeDir: new THREE.Vector3(0, 0, 0)
-      };
-      previewGroup.add(wireMesh);
+      ribMat = casingMat;
+      coreMat = new THREE.MeshBasicMaterial({ color: 0xffa726, transparent: true, opacity: 0.85 });
+      ringMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.9 });
+      latticeMat = brassMat;
+      sleeveMat = casingMat;
+      rodMat = casingMat;
+      jointMat = casingMat;
+    } else if (activeTab === "optimized") {
+      casingMat = metalMat;
+      ribMat = accentMat; // copper stress ribs
+      coreMat = glowMat;
+      ringMat = glowMat;
+      latticeMat = brassMat;
+      sleeveMat = metalMat;
+      rodMat = brassMat;
+      jointMat = metalMat;
+    } else if (activeTab === "linkages") {
+      casingMat = metalMat;
+      ribMat = metalMat;
+      coreMat = glowMat;
+      ringMat = glowMat;
+      latticeMat = metalMat;
+      sleeveMat = metalMat;
+      rodMat = accentMat; // bright copper hydraulic rod
+      jointMat = accentMat;
+    } else {
+      // production: single combined print-ready solid (all metal)
+      casingMat = metalMat;
+      ribMat = metalMat;
+      coreMat = metalMat;
+      ringMat = metalMat;
+      latticeMat = metalMat;
+      sleeveMat = metalMat;
+      rodMat = metalMat;
+      jointMat = metalMat;
     }
+
+    // Build the Bionic Alien Leg Joint Assembly (Unified Geometry)
+    
+    // 1. Central Core Sphere
+    const coreGeo = new THREE.SphereGeometry(0.8, 32, 32);
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    coreMesh.userData = {
+      originalPos: coreMesh.position.clone(),
+      explodeDir: new THREE.Vector3(0, 1.8, 0),
+      explodeScale: 1.2
+    };
+    previewGroup.add(coreMesh);
+
+    // 2. Core Torus Ring
+    const coreRingGeo = new THREE.TorusGeometry(1.4, 0.08, 16, 48);
+    coreRingGeo.rotateX(Math.PI / 2);
+    const coreRingMesh = new THREE.Mesh(coreRingGeo, ringMat);
+    coreRingMesh.userData = {
+      originalPos: coreRingMesh.position.clone(),
+      isGlowRing: true,
+      originalScale: 1.0,
+      explodeDir: new THREE.Vector3(0, 1.8, 0),
+      explodeScale: 1.2
+    };
+    previewGroup.add(coreRingMesh);
+
+    // 3. Inner Lattice Web (6 triangulated bionic struts)
+    const strutGeo = new THREE.CylinderGeometry(0.08, 0.08, 3.6, 8);
+    
+    const s1 = new THREE.Mesh(strutGeo, latticeMat);
+    s1.rotation.x = Math.PI / 4;
+    const s2 = new THREE.Mesh(strutGeo, latticeMat);
+    s2.rotation.x = -Math.PI / 4;
+    const s3 = new THREE.Mesh(strutGeo, latticeMat);
+    s3.rotation.z = Math.PI / 4;
+    const s4 = new THREE.Mesh(strutGeo, latticeMat);
+    s4.rotation.z = -Math.PI / 4;
+    const s5 = new THREE.Mesh(strutGeo, latticeMat);
+    s5.rotation.y = Math.PI / 4;
+    const s6 = new THREE.Mesh(strutGeo, latticeMat);
+    s6.rotation.y = -Math.PI / 4;
+    
+    s1.userData = { originalPos: s1.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
+    s2.userData = { originalPos: s2.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
+    s3.userData = { originalPos: s3.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
+    s4.userData = { originalPos: s4.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
+    s5.userData = { originalPos: s5.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
+    s6.userData = { originalPos: s6.position.clone(), explodeDir: new THREE.Vector3(0, -0.6, 0), explodeScale: 0.8 };
+    previewGroup.add(s1, s2, s3, s4, s5, s6);
+
+    // 4. Exoskeleton Casings (Left and Right halves)
+    const leftShellGeo = new THREE.CylinderGeometry(2.2, 2.2, 3.2, 32, 1, false, 0, Math.PI);
+    const leftShell = new THREE.Mesh(leftShellGeo, casingMat);
+    leftShell.userData = {
+      originalPos: leftShell.position.clone(),
+      explodeDir: new THREE.Vector3(-1.8, 0, 0),
+      explodeScale: 1.5
+    };
+    previewGroup.add(leftShell);
+
+    // Left Casing Ribs
+    for (let r = 0; r < 3; r++) {
+      const ribGeo = new THREE.TorusGeometry(2.3, 0.12, 8, 32, Math.PI);
+      ribGeo.rotateX(Math.PI / 2);
+      const rib = new THREE.Mesh(ribGeo, ribMat);
+      rib.position.set(0, -1.0 + r * 1.0, 0);
+      rib.userData = {
+        originalPos: rib.position.clone(),
+        explodeDir: new THREE.Vector3(-1.8, 0, 0),
+        explodeScale: 1.5
+      };
+      previewGroup.add(rib);
+    }
+
+    // Right Shell Casing
+    const rightShellGeo = new THREE.CylinderGeometry(2.2, 2.2, 3.2, 32, 1, false, Math.PI, Math.PI);
+    const rightShell = new THREE.Mesh(rightShellGeo, casingMat);
+    rightShell.userData = {
+      originalPos: rightShell.position.clone(),
+      explodeDir: new THREE.Vector3(1.8, 0, 0),
+      explodeScale: 1.5
+    };
+    previewGroup.add(rightShell);
+
+    // Right Casing Ribs
+    for (let r = 0; r < 3; r++) {
+      const ribGeo = new THREE.TorusGeometry(2.3, 0.12, 8, 32, Math.PI);
+      ribGeo.rotateX(Math.PI / 2);
+      ribGeo.rotateY(Math.PI);
+      const rib = new THREE.Mesh(ribGeo, ribMat);
+      rib.position.set(0, -1.0 + r * 1.0, 0);
+      rib.userData = {
+        originalPos: rib.position.clone(),
+        explodeDir: new THREE.Vector3(1.8, 0, 0),
+        explodeScale: 1.5
+      };
+      previewGroup.add(rib);
+    }
+
+    // 5. Kinematic Hydraulic Linkages (4x pistons pointing diagonally)
+    const angles = [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4];
+    angles.forEach((angle) => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      
+      // Sleeve
+      const sleeveGeo = new THREE.CylinderGeometry(0.35, 0.35, 1.4, 16);
+      sleeveGeo.rotateX(Math.PI / 2);
+      sleeveGeo.rotateY(-angle);
+      const sleeve = new THREE.Mesh(sleeveGeo, sleeveMat);
+      sleeve.position.set(cos * 1.6, 0, sin * 1.6);
+      sleeve.userData = {
+        originalPos: sleeve.position.clone(),
+        explodeDir: new THREE.Vector3(cos, 0, sin),
+        explodeScale: 1.3
+      };
+      previewGroup.add(sleeve);
+
+      // Rod
+      const rodGeo = new THREE.CylinderGeometry(0.18, 0.18, 1.6, 16);
+      rodGeo.rotateX(Math.PI / 2);
+      rodGeo.rotateY(-angle);
+      const rod = new THREE.Mesh(rodGeo, rodMat);
+      rod.position.set(cos * 2.3, 0, sin * 2.3);
+      rod.userData = {
+        originalPos: rod.position.clone(),
+        explodeDir: new THREE.Vector3(cos * 1.8, 0, sin * 1.8),
+        explodeScale: 1.8
+      };
+      previewGroup.add(rod);
+    });
+
+    // 6. Top & Bottom Joint Knuckle Mounts
+    const topMountGeo = new THREE.TorusGeometry(0.8, 0.3, 16, 32);
+    topMountGeo.rotateY(Math.PI / 2);
+    const topMount = new THREE.Mesh(topMountGeo, jointMat);
+    topMount.position.set(0, 2.0, 0);
+    topMount.userData = {
+      originalPos: topMount.position.clone(),
+      explodeDir: new THREE.Vector3(0, 1.6, 0),
+      explodeScale: 1.4
+    };
+    previewGroup.add(topMount);
+
+    const bottomMountGeo = new THREE.TorusGeometry(0.8, 0.3, 16, 32);
+    bottomMountGeo.rotateY(Math.PI / 2);
+    const bottomMount = new THREE.Mesh(bottomMountGeo, jointMat);
+    bottomMount.position.set(0, -2.0, 0);
+    bottomMount.userData = {
+      originalPos: bottomMount.position.clone(),
+      explodeDir: new THREE.Vector3(0, -1.6, 0),
+      explodeScale: 1.4
+    };
+    previewGroup.add(bottomMount);
 
     scene.add(previewGroup);
 
