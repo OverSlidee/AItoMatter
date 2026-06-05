@@ -406,10 +406,10 @@ export default function Workspace() {
         <div className="p-5 border-b border-zinc-900 flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2.5 group">
-              <div className="p-1.5 rounded-lg bg-amber-955/20 border border-amber-900/30 group-hover:border-amber-500/85 transition-all">
+              <div className="p-1.5 rounded-lg bg-amber-950/20 border border-amber-900/30 group-hover:border-amber-500/85 transition-all">
                 <Layers className="h-5 w-5 text-amber-500" />
               </div>
-              <span className="font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-550 to-orange-600 group-hover:from-amber-455 group-hover:to-orange-500 transition-all text-sm">
+              <span className="font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600 group-hover:from-amber-400 group-hover:to-orange-500 transition-all text-sm">
                 VELOLABS CEM
               </span>
             </Link>
@@ -426,7 +426,7 @@ export default function Workspace() {
                   setSelectedJob(null);
                   setIsCreating(true);
                 }}
-                className="p-2 rounded-lg bg-amber-955/20 border border-amber-900/60 hover:bg-amber-900/60 hover:border-amber-500/80 text-amber-555 transition-all cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.1)]"
+                className="p-2 rounded-lg bg-amber-950/20 border border-amber-900/60 hover:bg-amber-900/60 hover:border-amber-500/80 text-amber-500 transition-all cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.1)]"
                 title="Start New Generation"
               >
                 <Plus className="h-4 w-4" />
@@ -448,7 +448,7 @@ export default function Workspace() {
         </div>
 
         {/* Search / List header */}
-        <div className="px-5 py-3 text-[10px] font-bold font-mono tracking-widest text-zinc-550 border-b border-zinc-900 flex justify-between items-center bg-zinc-950/30">
+        <div className="px-5 py-3 text-[10px] font-bold font-mono tracking-widest text-zinc-500 border-b border-zinc-900 flex justify-between items-center bg-zinc-950/30">
           <span>COMPILATION RUNS</span>
           <span className="bg-zinc-900 px-2 py-0.5 rounded-md border border-zinc-850 text-zinc-400 font-bold">{jobs.length} runs</span>
         </div>
@@ -520,7 +520,7 @@ export default function Workspace() {
             
             {/* Platform Banner */}
             <div className="text-center space-y-4">
-              <div className="inline-flex items-center space-x-2 bg-amber-955/20 border border-amber-900/30 px-4 py-1.5 rounded-full text-amber-550 text-[10px] font-mono shadow-[0_0_15px_rgba(245,158,11,0.05)]">
+              <div className="inline-flex items-center space-x-2 bg-amber-950/20 border border-amber-900/30 px-4 py-1.5 rounded-full text-amber-500 text-[10px] font-mono shadow-[0_0_15px_rgba(245,158,11,0.05)]">
                 <Sparkles className="h-3.5 w-3.5 text-amber-505 animate-pulse" />
                 <span>Next-Gen Autonomous Voxel Engine</span>
               </div>
@@ -553,7 +553,7 @@ export default function Workspace() {
 
               {/* Datasheet Upload Area */}
               <div className="space-y-2.5">
-                <label className="block text-xs font-bold font-mono tracking-widest text-zinc-450 uppercase">
+                <label className="block text-xs font-bold font-mono tracking-widest text-zinc-400 uppercase">
                   2. Upload PDF Datasheet (Optional)
                 </label>
                 <div
@@ -563,7 +563,7 @@ export default function Workspace() {
                   onDrop={handleDrop}
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
                     dragActive 
-                      ? "border-amber-500 bg-amber-955/20" 
+                      ? "border-amber-500 bg-amber-950/20" 
                       : "border-zinc-800/80 bg-zinc-950/40 hover:bg-zinc-900/20 hover:border-zinc-800"
                   }`}
                   onClick={() => document.getElementById("pdf-upload")?.click()}
@@ -575,7 +575,7 @@ export default function Workspace() {
                     onChange={handleFileChange}
                     className="hidden"
                   />
-                  <div className={`p-3 rounded-full mb-3 ${file ? "bg-amber-955/20 text-amber-500 border border-amber-900/30" : "bg-zinc-900/60 text-zinc-500 border border-zinc-800/60"}`}>
+                  <div className={`p-3 rounded-full mb-3 ${file ? "bg-amber-950/20 text-amber-500 border border-amber-900/30" : "bg-zinc-900/60 text-zinc-500 border border-zinc-800/60"}`}>
                     <Upload className="h-6 w-6" />
                   </div>
                   {file ? (
@@ -586,7 +586,7 @@ export default function Workspace() {
                   ) : (
                     <div>
                       <p className="text-sm font-medium text-zinc-300">Drag & drop your PDF datasheet here</p>
-                      <p className="text-xs text-zinc-550 mt-1.5 font-mono">Supports standard engineering table layouts</p>
+                      <p className="text-xs text-zinc-500 mt-1.5 font-mono">Supports standard engineering table layouts</p>
                     </div>
                   )}
                 </div>
@@ -596,7 +596,7 @@ export default function Workspace() {
               <button
                 type="submit"
                 disabled={isSubmitting || !prompt.trim()}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-450 hover:to-orange-500 text-zinc-950 py-4 px-6 rounded-xl text-xs font-bold font-mono tracking-wider flex items-center justify-center space-x-2.5 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_25px_rgba(245,158,11,0.25)] cursor-pointer"
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-zinc-950 py-4 px-6 rounded-xl text-xs font-bold font-mono tracking-wider flex items-center justify-center space-x-2.5 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_25px_rgba(245,158,11,0.25)] cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -623,7 +623,7 @@ export default function Workspace() {
                 if (timeline.length <= 1) return null;
                 return (
                   <div className="glass-panel rounded-xl p-3 flex flex-wrap items-center gap-2 border border-zinc-900/60 bg-zinc-950/40 shrink-0 shadow-lg">
-                    <span className="text-[10px] font-mono font-bold text-zinc-550 uppercase tracking-wider mr-2">
+                    <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider mr-2">
                       Design Iteration Timeline:
                     </span>
                     {timeline.map((t, idx) => {
@@ -634,7 +634,7 @@ export default function Workspace() {
                             onClick={() => setSelectedJob(t)}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
                               isActive
-                                ? "bg-amber-500 text-zinc-955 font-bold shadow-[0_0_10px_rgba(245,158,11,0.25)]"
+                                ? "bg-amber-500 text-zinc-950 font-bold shadow-[0_0_10px_rgba(245,158,11,0.25)]"
                                 : "bg-zinc-950/80 border border-zinc-900/60 text-zinc-400 hover:text-zinc-250 hover:border-zinc-800"
                             }`}
                           >
@@ -667,7 +667,7 @@ export default function Workspace() {
                   <a
                     href={selectedJob.outputFilePath}
                     download
-                    className="self-start md:self-auto bg-gradient-to-r from-amber-500 to-orange-550 hover:from-amber-400 hover:to-orange-500 text-zinc-950 font-mono font-bold text-xs py-2.5 px-4.5 rounded-xl flex items-center space-x-2 border border-amber-400/20 shadow-[0_0_15px_rgba(245,158,11,0.15)] transition-all cursor-pointer hover:shadow-[0_0_20px_rgba(245,158,11,0.25)]"
+                    className="self-start md:self-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-500 text-zinc-950 font-mono font-bold text-xs py-2.5 px-4.5 rounded-xl flex items-center space-x-2 border border-amber-400/20 shadow-[0_0_15px_rgba(245,158,11,0.15)] transition-all cursor-pointer hover:shadow-[0_0_20px_rgba(245,158,11,0.25)]"
                   >
                     <Download className="h-4 w-4" />
                     <span>DOWNLOAD PRODUCTION 3MF</span>
@@ -704,7 +704,7 @@ export default function Workspace() {
                   </div>
                   <div className="flex items-center space-x-2.5">
                     <div className={`h-3 w-3 rounded-full transition-all ${
-                      selectedJob.progress >= 60 ? "bg-orange-550 step-glow-copper" : "bg-zinc-900 border border-zinc-800"
+                      selectedJob.progress >= 60 ? "bg-orange-500 step-glow-copper" : "bg-zinc-900 border border-zinc-800"
                     }`} />
                     <span className="text-xs font-mono text-zinc-400">3. Physics Check</span>
                   </div>
@@ -714,7 +714,7 @@ export default function Workspace() {
                         ? (selectedJob.status === "failed" ? "bg-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)]" : "bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]") 
                         : "bg-zinc-900 border border-zinc-800"
                     }`} />
-                    <span className="text-xs font-mono text-zinc-450">4. Voxel Output</span>
+                    <span className="text-xs font-mono text-zinc-400">4. Voxel Output</span>
                   </div>
                 </div>
               </div>
@@ -750,7 +750,7 @@ export default function Workspace() {
                       if (line.includes("[PHYSICS OVERRIDE]")) color = "text-amber-400 font-bold";
                       else if (line.includes("[SYSTEM ERROR]")) color = "text-red-400 font-bold";
                       else if (line.includes("[TOLERANCE ENGINE]")) color = "text-orange-400";
-                      else if (line.includes("[SYSTEM]")) color = "text-amber-550";
+                      else if (line.includes("[SYSTEM]")) color = "text-amber-500";
                       else if (line.includes("[WEB SEARCH]")) color = "text-zinc-600";
                       else if (line.includes("SUCCESSFUL")) color = "text-emerald-400 font-bold";
                       
@@ -784,7 +784,7 @@ export default function Workspace() {
                       outputFilePath={selectedJob.outputFilePath}
                     />
                   ) : selectedJob.status === "failed" ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-550 text-center p-6 space-y-3 bg-zinc-950/60">
+                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 text-center p-6 space-y-3 bg-zinc-950/60">
                       <div className="p-3 rounded-full bg-red-950/30 border border-red-900/60 text-red-500/80 animate-pulse">
                         <AlertTriangle className="h-8 w-8" />
                       </div>
@@ -794,8 +794,8 @@ export default function Workspace() {
                       </p>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-550 text-center p-6 space-y-4 bg-zinc-950/60">
-                      <div className="p-4 rounded-full bg-amber-955/20 border border-amber-900/30 text-amber-500/80 relative">
+                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 text-center p-6 space-y-4 bg-zinc-950/60">
+                      <div className="p-4 rounded-full bg-amber-950/20 border border-amber-900/30 text-amber-500/80 relative">
                         <Cpu className="h-8 w-8 animate-spin" />
                         <span className="absolute inset-0 rounded-full border border-amber-500 animate-ping opacity-25" />
                       </div>
@@ -822,8 +822,8 @@ export default function Workspace() {
                       <span>DATA BRIDGE AUDITING METRICS</span>
                     </h3>
                     <div className="flex items-center space-x-4 text-xs font-mono">
-                      <span>Method: <strong className="text-orange-550 font-bold bg-orange-950/20 px-2 py-0.5 rounded border border-orange-900/40">{selectedJob.manufacturingMethod}</strong></span>
-                      <span>Material: <strong className="text-amber-550 font-bold bg-amber-955/20 px-2 py-0.5 rounded border border-amber-900/40">{selectedJob.material}</strong></span>
+                      <span>Method: <strong className="text-orange-500 font-bold bg-orange-950/20 px-2 py-0.5 rounded border border-orange-900/40">{selectedJob.manufacturingMethod}</strong></span>
+                      <span>Material: <strong className="text-amber-500 font-bold bg-amber-950/20 px-2 py-0.5 rounded border border-amber-900/40">{selectedJob.material}</strong></span>
                     </div>
                   </div>
 
@@ -864,11 +864,11 @@ export default function Workspace() {
                                 {formatKeyName(key)}
                               </span>
                               {!modified ? (
-                                <span className="p-0.5 rounded-full bg-emerald-950/30 border border-emerald-900/40 text-emerald-450">
+                                <span className="p-0.5 rounded-full bg-emerald-950/30 border border-emerald-900/40 text-emerald-400">
                                   <Check className="h-3 w-3" />
                                 </span>
                               ) : (
-                                <span className="p-0.5 rounded-full bg-amber-955/30 border border-amber-900/40 text-amber-450 animate-pulse">
+                                <span className="p-0.5 rounded-full bg-amber-950/30 border border-amber-900/40 text-amber-400 animate-pulse">
                                   <Sliders className="h-3 w-3" />
                                 </span>
                               )}
@@ -884,7 +884,7 @@ export default function Workspace() {
                                   <span className="text-xs text-zinc-500 line-through font-mono">
                                     {formatValue(key, Number(oVal))}
                                   </span>
-                                  <span className="text-[8px] font-mono bg-amber-500/10 text-amber-450 px-2 py-0.5 rounded border border-amber-900/40 font-bold tracking-wider uppercase">
+                                  <span className="text-[8px] font-mono bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-900/40 font-bold tracking-wider uppercase">
                                     ADJUSTED
                                   </span>
                                 </>
@@ -953,7 +953,7 @@ export default function Workspace() {
               {(selectedJob.status === "completed" || selectedJob.status === "failed") && (
                 <form onSubmit={(e) => handleModifySubmit(e, false)} className="glass-panel rounded-2xl p-5 glow-card space-y-4 border border-zinc-900/60 bg-zinc-950/40 shadow-xl">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold font-mono tracking-widest text-zinc-450 uppercase flex items-center space-x-2">
+                    <label className="text-xs font-bold font-mono tracking-widest text-zinc-400 uppercase flex items-center space-x-2">
                       <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
                       <span>Iterative Assistant — Modify Model Design</span>
                     </label>
@@ -983,7 +983,7 @@ export default function Workspace() {
                       <button
                         type="submit"
                         disabled={isSubmitting || !modifyPrompt.trim()}
-                        className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-450 hover:to-orange-500 text-zinc-950 font-mono font-bold text-xs py-3.5 px-6 rounded-xl flex items-center space-x-2 shadow-[0_0_15px_rgba(245,158,11,0.15)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-zinc-950 font-mono font-bold text-xs py-3.5 px-6 rounded-xl flex items-center space-x-2 shadow-[0_0_15px_rgba(245,158,11,0.15)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         title="Create a new version iteration"
                       >
                         <span>NEW VERSION</span>

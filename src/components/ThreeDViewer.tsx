@@ -91,9 +91,9 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
 
     // Material definitions
     const metalMaterial = new THREE.MeshStandardMaterial({
-      color: 0x27272a, // zinc metal
-      metalness: 0.85,
-      roughness: 0.25,
+      color: 0xa1a1aa, // bright zinc/steel metal
+      metalness: 0.8,
+      roughness: 0.2,
       side: THREE.DoubleSide
     });
 
@@ -110,9 +110,9 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
     });
 
     const highlightMaterial = new THREE.MeshStandardMaterial({
-      color: 0xc2410c, // copper highlight
-      metalness: 0.7,
-      roughness: 0.3
+      color: 0xea580c, // bright copper/orange highlight
+      metalness: 0.8,
+      roughness: 0.2
     });
 
     // Helper to add meshes that respond to the view mode
