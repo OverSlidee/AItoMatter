@@ -61,6 +61,11 @@ export default function Workspace() {
   const [modifyPrompt, setModifyPrompt] = useState("");
 
   const logsEndRef = useRef<HTMLDivElement>(null);
+  
+  const selectedJobRef = useRef<Job | null>(null);
+  useEffect(() => {
+    selectedJobRef.current = selectedJob;
+  }, [selectedJob]);
 
   // Check query params for template injection
   useEffect(() => {
@@ -191,11 +196,20 @@ export default function Workspace() {
       if (data.jobs) {
         setJobs(data.jobs);
         
-        // Update selected job details if currently viewing one
-        if (selectedJob) {
-          const updated = data.jobs.find((j: Job) => j.jobId === selectedJob.jobId);
+        const currentSelected = selectedJobRef.current;
+        if (currentSelected) {
+          const updated = data.jobs.find((j: Job) => j.jobId === currentSelected.jobId);
           if (updated) {
-            setSelectedJob(updated);
+            // Only update selectedJob if properties actually changed to prevent redundant rendering
+            if (
+              updated.status !== currentSelected.status ||
+              updated.progress !== currentSelected.progress ||
+              updated.logs !== currentSelected.logs ||
+              updated.finalDimensions !== currentSelected.finalDimensions ||
+              updated.outputFilePath !== currentSelected.outputFilePath
+            ) {
+              setSelectedJob(updated);
+            }
           } else {
             setSelectedJob(null);
             setIsCreating(true);
@@ -232,7 +246,7 @@ export default function Workspace() {
     fetchJobs();
     const interval = setInterval(fetchJobs, 5000);
     return () => clearInterval(interval);
-  }, [selectedJob]);
+  }, []);
 
   // Polling for selected job when active
   useEffect(() => {
@@ -626,7 +640,7 @@ export default function Workspace() {
         ) : (
           // Active Job Viewer Screen
           selectedJob && (
-            <div className="p-6 md:p-8 space-y-6 flex-grow flex flex-col max-w-6xl mx-auto w-full animate-fade-in-up">
+            <div key={selectedJob.jobId} className="p-6 md:p-8 space-y-6 flex-grow flex flex-col max-w-6xl mx-auto w-full animate-fade-in-up">
               
               {/* Version History Breadcrumb Timeline */}
               {(() => {

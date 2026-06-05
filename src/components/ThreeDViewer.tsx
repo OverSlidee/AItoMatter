@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
-import { Maximize2, RotateCcw, Box, Grid } from "lucide-react";
+import { Maximize2, RotateCcw, Box, Grid, Cpu } from "lucide-react";
 
 interface ViewerProps {
   componentType: string;
@@ -19,6 +19,7 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
   const [viewMode, setViewMode] = useState<ViewMode>("composite");
   const viewModeRef = useRef<ViewMode>(viewMode);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const dimensions = typeof rawDimensions === "string" ? JSON.parse(rawDimensions || "{}") : (rawDimensions || {});
 
@@ -352,10 +353,12 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
     const loader = new ThreeMFLoader();
     if (outputFilePath) {
       console.log("[ThreeDViewer] Loading 3MF model from:", outputFilePath);
+      setIsLoading(true);
       loader.load(
         outputFilePath,
         (object) => {
           console.log("[ThreeDViewer] 3MF Model loaded successfully");
+          setIsLoading(false);
           object.traverse((child) => {
             if (child instanceof THREE.Mesh) {
               child.geometry.computeVertexNormals();
@@ -374,10 +377,12 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
         undefined,
         (error) => {
           console.error("[ThreeDViewer] Error loading 3MF model, rendering fallback:", error);
+          setIsLoading(false);
           renderFallbackGeometry();
         }
       );
     } else {
+      setIsLoading(false);
       renderFallbackGeometry();
     }
 
@@ -435,6 +440,13 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
       
       {/* 3D Canvas Container */}
       <div ref={containerRef} className="w-full h-full" />
+
+      {isLoading && (
+        <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm flex flex-col items-center justify-center text-zinc-500 space-y-3 z-25">
+          <Cpu className="h-8 w-8 animate-spin text-amber-500" />
+          <span className="font-mono text-xs text-amber-500 uppercase tracking-widest font-bold">Loading 3D Model...</span>
+        </div>
+      )}
       
       {/* Floating UI Header */}
       <div className="absolute top-3 left-3 bg-zinc-900/90 border border-zinc-800/80 px-3 py-1 rounded text-[10px] font-mono text-amber-500 flex items-center space-x-1.5 shadow-md">
