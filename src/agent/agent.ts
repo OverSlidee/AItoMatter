@@ -161,6 +161,15 @@ YOUR SCRIPT MUST CONFORM TO THESE RULES:
          with Locations((0, 10 + 3.5/2, 0)):
              Box(6, 3.5, 20, mode=Mode.SUBTRACT)
      [/python]
+6. Rotations and Locations in build123d:
+   - Rot (Rotation) is NOT a context manager! Never write "with Rot(rx, ry, rz):" or "with Rotation(...):".
+   - Instead, combine Position and Rotation directly inside the Locations context manager using:
+     "with Locations(Pos(x, y, z) * Rot(rx, ry, rz)):" or "with Locations((x, y, z), (rx, ry, rz)):"
+   - Example leg structure:
+     [python]
+     with Locations(Pos(-40, 90, -10) * Rot(0, -30, 0)):
+         Cylinder(radius=10, height=60, align=Align.MIN)
+     [/python]
 
 Example cadScript:
 [python]
