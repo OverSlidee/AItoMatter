@@ -189,12 +189,10 @@ async function processJob(job: Job) {
       // Ensure output.3mf exists so the client doesn't throw a file-not-found error, 
       // copying STL to 3MF as a fallback visualization mesh
       const output3mfPath = path.join(jobDir, "output.3mf");
-      if (!fs.existsSync(output3mfPath)) {
-        if (fs.existsSync(outputStl)) {
-          fs.copyFileSync(outputStl, output3mfPath);
-        } else {
-          fs.writeFileSync(output3mfPath, "");
-        }
+      if (fs.existsSync(outputStl)) {
+        fs.copyFileSync(outputStl, output3mfPath);
+      } else if (!fs.existsSync(output3mfPath)) {
+        fs.writeFileSync(output3mfPath, "");
       }
 
       // Set final dimensions same as original
