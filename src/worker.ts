@@ -143,6 +143,36 @@ async function processJob(job: Job) {
       const outputStl = path.join(jobDir, "output.stl");
       const outputDxf = path.join(jobDir, "output.dxf");
 
+      // Fallback check: if output.step/stl/dxf do not exist, check if other files were generated
+      try {
+        const files = fs.readdirSync(jobDir);
+        if (!fs.existsSync(outputStep)) {
+          const stepFile = files.find(f => f.endsWith(".step") && f !== "output.step");
+          if (stepFile) {
+            fs.copyFileSync(path.join(jobDir, stepFile), outputStep);
+            await log(`[SYSTEM] Fallback: Copied generated ${stepFile} to output.step`);
+          }
+        }
+        if (!fs.existsSync(outputStl)) {
+          const stlFiles = files.filter(f => f.endsWith(".stl") && f !== "output.stl");
+          if (stlFiles.length > 0) {
+            const bestStl = stlFiles.find(f => f.toLowerCase().includes("assembly") || f.toLowerCase().includes("robot")) || 
+                            stlFiles.sort((a, b) => fs.statSync(path.join(jobDir, b)).size - fs.statSync(path.join(jobDir, a)).size)[0];
+            fs.copyFileSync(path.join(jobDir, bestStl), outputStl);
+            await log(`[SYSTEM] Fallback: Copied generated ${bestStl} to output.stl`);
+          }
+        }
+        if (!fs.existsSync(outputDxf)) {
+          const dxfFile = files.find(f => f.endsWith(".dxf") && f !== "output.dxf");
+          if (dxfFile) {
+            fs.copyFileSync(path.join(jobDir, dxfFile), outputDxf);
+            await log(`[SYSTEM] Fallback: Copied generated ${dxfFile} to output.dxf`);
+          }
+        }
+      } catch (err: any) {
+        await log(`[SYSTEM] Warning during fallback files scanning: ${err.message}`);
+      }
+
       if (fs.existsSync(outputStep)) {
         await log(`[SYSTEM] Watertight STEP model compiled successfully!`);
         outputFormat = "step";
@@ -227,6 +257,19 @@ async function processJob(job: Job) {
         });
 
         const sdfPath = path.join(jobDir, "output.sdf");
+        if (!fs.existsSync(sdfPath)) {
+          try {
+            const files = fs.readdirSync(jobDir);
+            const sdfFile = files.find(f => f.endsWith(".sdf") && f !== "output.sdf");
+            if (sdfFile) {
+              fs.copyFileSync(path.join(jobDir, sdfFile), sdfPath);
+              await log(`[SYSTEM] Fallback: Copied generated ${sdfFile} to output.sdf`);
+            }
+          } catch (err: any) {
+            await log(`[SYSTEM] Warning scanning fallback SDF files: ${err.message}`);
+          }
+        }
+
         if (fs.existsSync(sdfPath)) {
           isSdfCompiled = true;
         } else {

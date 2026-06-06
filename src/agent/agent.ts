@@ -129,13 +129,8 @@ The Python script runs in a virtualenv with the "build123d" library pre-installe
 
 YOUR SCRIPT MUST CONFORM TO THESE RULES:
 1. Always import build123d: "from build123d import *"
-2. Create parts/bodies inside build contexts:
-   [python]
-   with BuildPart() as part:
-       Box(60, 100, 10)
-       # Subtract holes, add chamfers, fillets, etc.
-   [/python]
-3. Export the final model to STEP and STL in the current working directory:
+2. Create parts/bodies inside build contexts.
+3. CRITICAL: Export the final model or assembly exactly to "output.step" and "output.stl" (or "output.dxf" for a 2D sheet profile) in the current working directory. Do NOT use custom names like "assembly.step" or "body.step" for the main files. They MUST be named "output.step" and "output.stl" for the visualization system to find them.
    [python]
    export_step(part.part, "output.step")
    export_stl(part.part, "output.stl")
@@ -183,7 +178,8 @@ export_stl(bracket.part, "output.stl")
 [/python]
 
 ### PYTHON SDF SIMULATION SPECIFICATION (SDFormat):
-If the user request asks for simulator models, simulation worlds, frames, physics parameters, sensors, or lights, you must provide a valid XML string or a Python script generating that SDF XML in the "sdfScript" field of your finalize response.
+If the user request asks for simulator models, simulation worlds, frames, physics parameters, sensors, lights, or refers to multi-body assemblies, joints, link mechanisms, or robots, you MUST provide a valid XML string or a Python script generating that SDF XML in the "sdfScript" field of your finalize response.
+The SDF script should define the kinematic chain of links and joints representing the robot or mechanism.
 
 RULES FOR GENERATING SDF:
 1. Treat the Python generator script as the source of truth if programmatically building the XML, or supply direct SDF XML.
