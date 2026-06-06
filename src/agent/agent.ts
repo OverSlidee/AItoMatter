@@ -144,6 +144,23 @@ YOUR SCRIPT MUST CONFORM TO THESE RULES:
    [python]
    export_dxf(part.part.faces().filter_by(Axis.Z)[0], "output.dxf")
    [/python]
+5. If a gear is required, use the SpurGear class from bd_warehouse.gear:
+   - Import it as: "from bd_warehouse.gear import SpurGear"
+   - Arguments are: module, tooth_count, pressure_angle (usually 20.0), thickness.
+   - SpurGear does NOT accept bore_diameter, keyway_width, or keyway_depth parameters in its constructor. You MUST subtract bore holes and keyways manually using Cylinder and Box operations inside the BuildPart context.
+   - Example gear script:
+     [python]
+     from build123d import *
+     from bd_warehouse.gear import SpurGear
+     with BuildPart() as gear_assembly:
+         g = SpurGear(module=2, tooth_count=20, pressure_angle=20.0, thickness=15)
+         add(g)
+         # Subtract center bore shaft hole
+         Cylinder(radius=10, height=20, mode=Mode.SUBTRACT)
+         # Subtract keyway slot (width 6, depth 3.5)
+         with Locations((0, 10 + 3.5/2, 0)):
+             Box(6, 3.5, 20, mode=Mode.SUBTRACT)
+     [/python]
 
 Example cadScript:
 [python]
