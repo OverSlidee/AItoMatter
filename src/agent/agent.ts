@@ -243,7 +243,11 @@ If you do not know the standard dimensions of components requested (like a 4kW m
 }
 
 ### FINALIZATION INSTRUCTIONS:
-When you have all data, finalize the schema. Populate BOTH the flat "dimensions" parameters (so the C# engine can run easy physics safety overrides) AND build the full "geometryTree" matching those dimensions (and write a python "cadScript" if high-fidelity CAD/STEP output is required, or "sdfScript" if SDF simulation format is needed):
+When you have all data, finalize the schema. Populate BOTH the flat "dimensions" parameters (so the C# engine can run easy physics safety overrides) AND build the full "geometryTree" matching those dimensions.
+Additionally:
+- Write a python "cadScript" (using build123d) to export "output.step" and "output.stl" whenever high-fidelity CAD/STEP/STL output is needed (including for robot links/geometry).
+- Write an "sdfScript" whenever simulation, joints, robots, sensors, or lights are requested.
+- If designing a robot, vehicle, or articulated assembly, you MUST output BOTH a "cadScript" (to generate the STL/STEP meshes) and an "sdfScript" (to define the simulation kinematic chain referencing those meshes):
 {
   "action": "finalize",
   "schema": {
