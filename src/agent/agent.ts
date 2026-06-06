@@ -125,28 +125,28 @@ GUIDELINES FOR POPULAR CUSTOM GEOMETRIES:
 
 ### PYTHON CAD ENGINE SPECIFICATION (build123d):
 If the user request requires precise mechanical geometry, STEP/STL/DXF exports, B-Rep precision, assemblies, or standard parts catalog integration, you must write a valid Python script in the "cadScript" field of your finalize response.
-The Python script runs in a virtualenv with the \\`build123d\\` library pre-installed.
+The Python script runs in a virtualenv with the "build123d" library pre-installed.
 
 YOUR SCRIPT MUST CONFORM TO THESE RULES:
-1. Always import build123d: \\`from build123d import *\\`
+1. Always import build123d: "from build123d import *"
 2. Create parts/bodies inside build contexts:
-   \\`\\`\\`python
+   [python]
    with BuildPart() as part:
        Box(60, 100, 10)
        # Subtract holes, add chamfers, fillets, etc.
-   \\`\\`\\`
+   [/python]
 3. Export the final model to STEP and STL in the current working directory:
-   \\`\\`\\`python
+   [python]
    export_step(part.part, "output.step")
    export_stl(part.part, "output.stl")
-   \\`\\`\\`
+   [/python]
 4. If a sheet metal 2D profile is required, export as DXF:
-   \\`\\`\\`python
+   [python]
    export_dxf(part.part.faces().filter_by(Axis.Z)[0], "output.dxf")
-   \\`\\`\\`
+   [/python]
 
 Example cadScript:
-\\`\\`\\`python
+[python]
 from build123d import *
 with BuildPart() as bracket:
     Box(40, 80, 8)
@@ -154,18 +154,18 @@ with BuildPart() as bracket:
         Cylinder(radius=5, height=10, mode=Mode.SUBTRACT)
 export_step(bracket.part, "output.step")
 export_stl(bracket.part, "output.stl")
-\\`\\`\\`
+[/python]
 
 ### PYTHON SDF SIMULATION SPECIFICATION (SDFormat):
 If the user request asks for simulator models, simulation worlds, frames, physics parameters, sensors, or lights, you must provide a valid XML string or a Python script generating that SDF XML in the "sdfScript" field of your finalize response.
 
 RULES FOR GENERATING SDF:
 1. Treat the Python generator script as the source of truth if programmatically building the XML, or supply direct SDF XML.
-2. Direct SDF XML must begin with \\`<sdf version="1.12">\\` or \\`<?xml\\`.
+2. Direct SDF XML must begin with "<sdf version='1.12'>" or "<?xml".
 3. If writing a Python generator script:
-   - Your code must generate a file named \\`output.sdf\\` in the current working directory.
+   - Your code must generate a file named "output.sdf" in the current working directory.
    - Example Python generator structure:
-     \\`\\`\\`python
+     [python]
      # Generate SDF XML content
      sdf_xml = """<?xml version="1.0" ?>
      <sdf version="1.12">
@@ -200,9 +200,9 @@ RULES FOR GENERATING SDF:
      """
      with open("output.sdf", "w") as f:
          f.write(sdf_xml)
-     \\`\\`\\`
+     [/python]
 4. Always specify frames, link inertials, collisions, visuals, and physics tags accurately when requested.
-5. If visual geometry depends on companion STL files, reference them as \\`<mesh><uri>output.stl</uri></mesh>\\`.
+5. If visual geometry depends on companion STL files, reference them as "<mesh><uri>output.stl</uri></mesh>".
 
 ### ITERATIVE MODIFICATIONS:
 If you receive "ITERATION CONTEXT", you are performing an evolutionary update to a previous design:
@@ -221,7 +221,7 @@ If you do not know the standard dimensions of components requested (like a 4kW m
 }
 
 ### FINALIZATION INSTRUCTIONS:
-When you have all data, finalize the schema. Populate BOTH the flat "dimensions" parameters (so the C# engine can run easy physics safety overrides) AND build the full "geometryTree" matching those dimensions (and write a python \\`cadScript\\` if high-fidelity CAD/STEP output is required, or \\`sdfScript\\` if SDF simulation format is needed):
+When you have all data, finalize the schema. Populate BOTH the flat "dimensions" parameters (so the C# engine can run easy physics safety overrides) AND build the full "geometryTree" matching those dimensions (and write a python "cadScript" if high-fidelity CAD/STEP output is required, or "sdfScript" if SDF simulation format is needed):
 {
   "action": "finalize",
   "schema": {
