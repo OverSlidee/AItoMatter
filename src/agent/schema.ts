@@ -95,6 +95,8 @@ export const ExtractedDimensionsSchema = z.object({
     CustomDimensionsSchema,
   ]),
   geometryTree: CSGNodeSchema.describe("The CSG tree representing the geometry of the component. The root node can be a boolean operation (union, difference) or a direct primitive."),
+  cadScript: z.string().optional().describe("An optional python CAD script utilizing build123d to generate the STEP/STL/DXF files directly."),
+  sdfScript: z.string().optional().describe("An optional python script or XML string representing the SDF simulation model/world description."),
 });
 
 export type ExtractedDimensions = z.infer<typeof ExtractedDimensionsSchema>;

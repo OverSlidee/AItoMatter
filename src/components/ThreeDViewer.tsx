@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { Maximize2, RotateCcw, Box, Grid, Cpu } from "lucide-react";
 
 interface ViewerProps {
@@ -350,37 +351,75 @@ export default function ThreeDViewer({ componentType, dimensions: rawDimensions,
       centerAndFocusMesh();
     };
 
-    const loader = new ThreeMFLoader();
-    if (outputFilePath) {
-      console.log("[ThreeDViewer] Loading 3MF model from:", outputFilePath);
-      setIsLoading(true);
-      loader.load(
-        outputFilePath,
-        (object) => {
-          console.log("[ThreeDViewer] 3MF Model loaded successfully");
-          setIsLoading(false);
-          object.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              child.geometry.computeVertexNormals();
-              child.material = metalMaterial;
-              child.castShadow = true;
-              child.receiveShadow = true;
-              
-              const wireMesh = new THREE.Mesh(child.geometry, wireMaterial);
-              meshGroup.add(wireMesh);
-              sceneObjects.push({ solidMesh: child, wireMesh, isInner: false });
-            }
-          });
-          meshGroup.add(object);
-          centerAndFocusMesh();
-        },
-        undefined,
-        (error) => {
-          console.error("[ThreeDViewer] Error loading 3MF model, rendering fallback:", error);
-          setIsLoading(false);
-          renderFallbackGeometry();
-        }
-      );
+    let modelPath = outputFilePath;
+    if (modelPath && (modelPath.endsWith(".step") || modelPath.endsWith(".dxf") || modelPath.endsWith(".sdf") || modelPath.endsWith(".urdf"))) {
+      modelPath = modelPath.substring(0, modelPath.lastIndexOf("/")) + "/output.stl";
+    }
+
+    if (modelPath) {
+      if (modelPath.endsWith(".stl")) {
+        console.log("[ThreeDViewer] Loading STL model from:", modelPath);
+        setIsLoading(true);
+        const stlLoader = new STLLoader();
+        stlLoader.load(
+          modelPath,
+          (geometry) => {
+            console.log("[ThreeDViewer] STL Model loaded successfully");
+            setIsLoading(false);
+            geometry.computeVertexNormals();
+            
+            const solidMesh = new THREE.Mesh(geometry, metalMaterial);
+            solidMesh.castShadow = true;
+            solidMesh.receiveShadow = true;
+            
+            const wireMesh = new THREE.Mesh(geometry, wireMaterial);
+            meshGroup.add(solidMesh);
+            meshGroup.add(wireMesh);
+            sceneObjects.push({ solidMesh, wireMesh, isInner: false });
+            
+            centerAndFocusMesh();
+          },
+          undefined,
+          (error) => {
+            console.error("[ThreeDViewer] Error loading STL model, rendering fallback:", error);
+            setIsLoading(false);
+            renderFallbackGeometry();
+          }
+        );
+      } else if (modelPath.endsWith(".3mf")) {
+        console.log("[ThreeDViewer] Loading 3MF model from:", modelPath);
+        setIsLoading(true);
+        const loader = new ThreeMFLoader();
+        loader.load(
+          modelPath,
+          (object) => {
+            console.log("[ThreeDViewer] 3MF Model loaded successfully");
+            setIsLoading(false);
+            object.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                child.geometry.computeVertexNormals();
+                child.material = metalMaterial;
+                child.castShadow = true;
+                child.receiveShadow = true;
+                
+                const wireMesh = new THREE.Mesh(child.geometry, wireMaterial);
+                meshGroup.add(wireMesh);
+                sceneObjects.push({ solidMesh: child, wireMesh, isInner: false });
+              }
+            });
+            meshGroup.add(object);
+            centerAndFocusMesh();
+          },
+          undefined,
+          (error) => {
+            console.error("[ThreeDViewer] Error loading 3MF model, rendering fallback:", error);
+            setIsLoading(false);
+            renderFallbackGeometry();
+          }
+        );
+      } else {
+        renderFallbackGeometry();
+      }
     } else {
       setIsLoading(false);
       renderFallbackGeometry();

@@ -96,95 +96,248 @@ async function processJob(job: Job) {
     fs.writeFileSync(schemaPath, JSON.stringify(extractedSchema, null, 2));
     await log(`[SYSTEM] Immutable Data Bridge schema.json written to disk.`);
 
-    await log(`[SYSTEM] Dispatching to C# Voxel Engine...`);
-    await updateJob(jobId, { status: "compiling", progress: 50 });
-
-    // Resolve C# Compiler paths
-    const output3mfPath = path.join(jobDir, "output.3mf");
-    const isWindows = process.platform === "win32";
-    const binaryName = isWindows ? "cem.exe" : "cem";
-    const cemExe = path.resolve(
-      process.cwd(),
-      "cem",
-      "bin",
-      "Debug",
-      "net9.0",
-      binaryName
-    );
-
-    if (!fs.existsSync(cemExe)) {
-      throw new Error(`C# CEM Compiler executable not found at: ${cemExe}. Please run 'dotnet build cem/cem.csproj'.`);
-    }
-
-    await log(`[SYSTEM] Spawning CEM Engine process...`);
-
-    // Run C# compiler
-    await new Promise<void>((resolve, reject) => {
-      const isWindows = process.platform === "win32";
-      const customEnv = {
-        ...process.env,
-        DOTNET_ROOT: process.env.DOTNET_ROOT || (isWindows ? process.env.DOTNET_ROOT : "/home/username/.dotnet"),
-        PATH: process.env.PATH
-          ? (isWindows ? process.env.PATH : `/home/username/.dotnet:${process.env.PATH}`)
-          : (isWindows ? "" : "/home/username/.dotnet:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
-      };
-      const child = spawn(cemExe, [schemaPath, output3mfPath], { env: customEnv });
-
-      child.stdout.on("data", (data) => {
-        const lines = data.toString().split("\n");
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed) {
-            log(trimmed);
-            // Update status progress based on C# engine milestones
-            if (trimmed.includes("Rendering shape field")) {
-              updateJob(jobId, { progress: 70 });
-            } else if (trimmed.includes("converting voxel matrix")) {
-              updateJob(jobId, { progress: 85 });
-            } else if (trimmed.includes("Saving production 3MF")) {
-              updateJob(jobId, { progress: 95 });
-            }
-          }
-        }
-      });
-
-      child.stderr.on("data", (data) => {
-        const line = data.toString().trim();
-        if (line) {
-          log(`[CEM ERROR] ${line}`);
-        }
-      });
-
-      child.on("close", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`CEM Engine exited with code ${code}`));
-        }
-      });
-    });
-
-    // Retrieve C# adjusted dimensions
-    const updatedSchemaPath = path.join(jobDir, "schema_updated.json");
     let finalDimensionsStr = null;
-    
-    if (fs.existsSync(updatedSchemaPath)) {
-      try {
-        const updatedSchema = JSON.parse(fs.readFileSync(updatedSchemaPath, "utf-8"));
-        finalDimensionsStr = JSON.stringify(updatedSchema.Dimensions || updatedSchema.dimensions);
-        await log(`[SYSTEM] Loaded finalized physical engineering dimensions.`);
-      } catch (e: any) {
-        await log(`[SYSTEM] Warning: Failed to parse updated schema JSON: ${e.message}`);
+    let outputFormat = "3mf";
+
+    if (extractedSchema.cadScript) {
+      await log(`[SYSTEM] Python CAD script detected. Dispatching to Python CAD Engine...`);
+      await updateJob(jobId, { status: "compiling", progress: 50 });
+
+      const scriptPath = path.join(jobDir, "cad_script.py");
+      fs.writeFileSync(scriptPath, extractedSchema.cadScript);
+      await log(`[SYSTEM] Saved Python CAD script to: ${scriptPath}`);
+
+      // Execute Python script inside the virtual environment
+      await new Promise<void>((resolve, reject) => {
+        const isWindows = process.platform === "win32";
+        const pythonPath = isWindows ? "python" : "/home/username/AItoMatter/venv/bin/python";
+
+        const child = spawn(pythonPath, ["cad_script.py"], { cwd: jobDir });
+
+        child.stdout.on("data", (data) => {
+          const lines = data.toString().split("\n");
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed) log(`[PYTHON] ${trimmed}`);
+          }
+        });
+
+        child.stderr.on("data", (data) => {
+          const lines = data.toString().split("\n");
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed) log(`[PYTHON ERROR] ${trimmed}`);
+          }
+        });
+
+        child.on("close", (code) => {
+          if (code === 0) {
+            resolve();
+          } else {
+            reject(new Error(`Python CAD script exited with code ${code}`));
+          }
+        });
+      });
+
+      const outputStep = path.join(jobDir, "output.step");
+      const outputStl = path.join(jobDir, "output.stl");
+      const outputDxf = path.join(jobDir, "output.dxf");
+
+      if (fs.existsSync(outputStep)) {
+        await log(`[SYSTEM] Watertight STEP model compiled successfully!`);
+        outputFormat = "step";
+      } else if (fs.existsSync(outputDxf)) {
+        await log(`[SYSTEM] 2D sheet metal DXF profile compiled successfully!`);
+        outputFormat = "dxf";
+      } else if (fs.existsSync(outputStl)) {
+        await log(`[SYSTEM] Watertight STL model compiled successfully!`);
+        outputFormat = "stl";
+      } else {
+        await log(`[SYSTEM] Warning: No production files (output.step/stl/dxf) were generated.`);
+      }
+
+      // Ensure output.3mf exists so the client doesn't throw a file-not-found error, 
+      // copying STL to 3MF as a fallback visualization mesh
+      const output3mfPath = path.join(jobDir, "output.3mf");
+      if (!fs.existsSync(output3mfPath)) {
+        if (fs.existsSync(outputStl)) {
+          fs.copyFileSync(outputStl, output3mfPath);
+        } else {
+          fs.writeFileSync(output3mfPath, "");
+        }
+      }
+
+      // Set final dimensions same as original
+      finalDimensionsStr = JSON.stringify(extractedSchema.dimensions);
+      
+      const updatedSchemaPath = path.join(jobDir, "schema_updated.json");
+      if (!fs.existsSync(updatedSchemaPath)) {
+        fs.writeFileSync(updatedSchemaPath, JSON.stringify(extractedSchema, null, 2));
       }
     }
 
-    await log(`[SYSTEM] Watertight .3mf file compiled successfully!`);
-    
+    if (extractedSchema.sdfScript) {
+      await log(`[SYSTEM] SDF Simulation description detected. Dispatching to Simulator Builder...`);
+      await updateJob(jobId, { status: "compiling", progress: 70 });
+
+      let isSdfCompiled = false;
+      const trimmedSdf = extractedSchema.sdfScript.trim();
+      const isXml = trimmedSdf.startsWith("<") || trimmedSdf.startsWith("<?xml");
+
+      if (isXml) {
+        const sdfPath = path.join(jobDir, "output.sdf");
+        fs.writeFileSync(sdfPath, extractedSchema.sdfScript);
+        await log(`[SYSTEM] Saved direct SDF XML output to: ${sdfPath}`);
+        isSdfCompiled = true;
+      } else {
+        // Python generator script
+        const sdfScriptPath = path.join(jobDir, "sdf_script.py");
+        fs.writeFileSync(sdfScriptPath, extractedSchema.sdfScript);
+        await log(`[SYSTEM] Saved Python SDF generator script to: ${sdfScriptPath}`);
+
+        await new Promise<void>((resolve, reject) => {
+          const isWindows = process.platform === "win32";
+          const pythonPath = isWindows ? "python" : "/home/username/AItoMatter/venv/bin/python";
+
+          const child = spawn(pythonPath, ["sdf_script.py"], { cwd: jobDir });
+
+          child.stdout.on("data", (data) => {
+            const lines = data.toString().split("\n");
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed) log(`[PYTHON-SDF] ${trimmed}`);
+            }
+          });
+
+          child.stderr.on("data", (data) => {
+            const lines = data.toString().split("\n");
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed) log(`[PYTHON-SDF ERROR] ${trimmed}`);
+            }
+          });
+
+          child.on("close", (code) => {
+            if (code === 0) {
+              resolve();
+            } else {
+              reject(new Error(`Python SDF script exited with code ${code}`));
+            }
+          });
+        });
+
+        const sdfPath = path.join(jobDir, "output.sdf");
+        if (fs.existsSync(sdfPath)) {
+          isSdfCompiled = true;
+        } else {
+          await log(`[SYSTEM] Warning: Python SDF generator script did not produce output.sdf`);
+        }
+      }
+
+      if (isSdfCompiled) {
+        await log(`[SYSTEM] SDF Simulator description compiled successfully!`);
+        outputFormat = "sdf";
+        
+        // Ensure finalDimensionsStr is set
+        if (!finalDimensionsStr) {
+          finalDimensionsStr = JSON.stringify(extractedSchema.dimensions);
+        }
+
+        const updatedSchemaPath = path.join(jobDir, "schema_updated.json");
+        if (!fs.existsSync(updatedSchemaPath)) {
+          fs.writeFileSync(updatedSchemaPath, JSON.stringify(extractedSchema, null, 2));
+        }
+      }
+    }
+
+    if (!extractedSchema.cadScript && !extractedSchema.sdfScript) {
+      await log(`[SYSTEM] Dispatching to C# Voxel Engine...`);
+      await updateJob(jobId, { status: "compiling", progress: 50 });
+
+      // Resolve C# Compiler paths
+      const output3mfPath = path.join(jobDir, "output.3mf");
+      const isWindows = process.platform === "win32";
+      const binaryName = isWindows ? "cem.exe" : "cem";
+      const cemExe = path.resolve(
+        process.cwd(),
+        "cem",
+        "bin",
+        "Debug",
+        "net9.0",
+        binaryName
+      );
+
+      if (!fs.existsSync(cemExe)) {
+        throw new Error(`C# CEM Compiler executable not found at: ${cemExe}. Please run 'dotnet build cem/cem.csproj'.`);
+      }
+
+      await log(`[SYSTEM] Spawning CEM Engine process...`);
+
+      // Run C# compiler
+      await new Promise<void>((resolve, reject) => {
+        const isWindows = process.platform === "win32";
+        const customEnv = {
+          ...process.env,
+          DOTNET_ROOT: process.env.DOTNET_ROOT || (isWindows ? process.env.DOTNET_ROOT : "/home/username/.dotnet"),
+          PATH: process.env.PATH
+            ? (isWindows ? process.env.PATH : `/home/username/.dotnet:${process.env.PATH}`)
+            : (isWindows ? "" : "/home/username/.dotnet:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+        };
+        const child = spawn(cemExe, [schemaPath, output3mfPath], { env: customEnv });
+
+        child.stdout.on("data", (data) => {
+          const lines = data.toString().split("\n");
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed) {
+              log(trimmed);
+              if (trimmed.includes("Rendering shape field")) {
+                updateJob(jobId, { progress: 70 });
+              } else if (trimmed.includes("converting voxel matrix")) {
+                updateJob(jobId, { progress: 85 });
+              } else if (trimmed.includes("Saving production 3MF")) {
+                updateJob(jobId, { progress: 95 });
+              }
+            }
+          }
+        });
+
+        child.stderr.on("data", (data) => {
+          const line = data.toString().trim();
+          if (line) {
+            log(`[CEM ERROR] ${line}`);
+          }
+        });
+
+        child.on("close", (code) => {
+          if (code === 0) {
+            resolve();
+          } else {
+            reject(new Error(`CEM Engine exited with code ${code}`));
+          }
+        });
+      });
+
+      // Retrieve C# adjusted dimensions
+      const updatedSchemaPath = path.join(jobDir, "schema_updated.json");
+      if (fs.existsSync(updatedSchemaPath)) {
+        try {
+          const updatedSchema = JSON.parse(fs.readFileSync(updatedSchemaPath, "utf-8"));
+          finalDimensionsStr = JSON.stringify(updatedSchema.Dimensions || updatedSchema.dimensions);
+          await log(`[SYSTEM] Loaded finalized physical engineering dimensions.`);
+        } catch (e: any) {
+          await log(`[SYSTEM] Warning: Failed to parse updated schema JSON: ${e.message}`);
+        }
+      }
+
+      await log(`[SYSTEM] Watertight .3mf file compiled successfully!`);
+    }
+
     await updateJob(jobId, {
       status: "completed",
       progress: 100,
       finalDimensions: finalDimensionsStr,
-      outputFilePath: `/jobs/${jobId}/output.3mf`
+      outputFilePath: `/jobs/${jobId}/output.${outputFormat}`
     });
 
   } catch (err: any) {

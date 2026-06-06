@@ -695,7 +695,17 @@ export default function Workspace() {
                     className="self-start md:self-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-500 text-zinc-950 font-mono font-bold text-xs py-2.5 px-4.5 rounded-xl flex items-center space-x-2 border border-amber-400/20 shadow-[0_0_15px_rgba(245,158,11,0.15)] transition-all cursor-pointer hover:shadow-[0_0_20px_rgba(245,158,11,0.25)]"
                   >
                     <Download className="h-4 w-4" />
-                    <span>DOWNLOAD PRODUCTION 3MF</span>
+                    <span>
+                      {selectedJob.outputFilePath.endsWith(".step")
+                        ? "DOWNLOAD PRODUCTION STEP"
+                        : selectedJob.outputFilePath.endsWith(".dxf")
+                        ? "DOWNLOAD PRODUCTION DXF"
+                        : selectedJob.outputFilePath.endsWith(".stl")
+                        ? "DOWNLOAD PRODUCTION STL"
+                        : selectedJob.outputFilePath.endsWith(".sdf")
+                        ? "DOWNLOAD SIMULATOR SDF"
+                        : "DOWNLOAD PRODUCTION 3MF"}
+                    </span>
                   </a>
                 )}
               </div>
